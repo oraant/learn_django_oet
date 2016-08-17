@@ -4,7 +4,7 @@ from django.db import models
 # Create your models here.
 class GlobalConfigs(models.Model):
 
-    """Global configs with column style."""
+    """Global configs with column style.So add new config will not affect columns."""
 
     name = models.CharField(max_length=50)
     value = models.CharField(max_length=50, null=True, blank=True)

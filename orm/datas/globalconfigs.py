@@ -14,10 +14,10 @@ class Handler(BasicHandler):
 
         self.data = [
             ('mysql_host', '127.0.0.1', 'Use 127.0.0.1 instead of localhost to enforce port'),
-            ('mysql_port', '3306', 'Will not work is host is localhost'),
-            ('mysql_db', 'dbcache', '-'),
-            ('mysql_user', 'root', '-'),
-            ('mysql_password', '123456', '-'),
+            ('mysql_port', '3306', 'Will not work if host is localhost'),
+            ('mysql_db', 'oet', '-'),
+            ('mysql_user', 'django', '-'),
+            ('mysql_password', 'django', '-'),
 
             ('redis_host', '127.0.0.1', '-'),
             ('redis_port', '6379', '-'),
