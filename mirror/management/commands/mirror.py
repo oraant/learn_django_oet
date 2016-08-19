@@ -25,7 +25,7 @@ class Proxy:
         self.verify=verify.Verify()
 
     def _format(self,table):
-        '''format table sqls,replace <TABLE_NAME>'''
+        """format table sqls,replace <TABLE_NAME>"""
         table.name = self.dbconfig.name + '_' + table.name
         table.create = table.create.replace("<TABLE_NAME>",table.name)
         table.drop = table.drop.replace("<TABLE_NAME>",table.name)

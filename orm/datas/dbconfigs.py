@@ -7,7 +7,7 @@ class Handler(BasicHandler):
 
     def __init__(self):
 
-        from orm.models import DBConfigs
+        from mirror.models import DBConfigs
         self.orm = DBConfigs
 
         self.fields = [

@@ -7,7 +7,7 @@ class Handler(BasicHandler):
 
     def __init__(self):
 
-        from orm.models import GlobalConfigs
+        from mirror.models import GlobalConfigs
         self.orm = GlobalConfigs
 
         self.fields = ['name', 'value', 'desc']

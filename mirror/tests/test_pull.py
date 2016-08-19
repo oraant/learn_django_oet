@@ -1,30 +1,21 @@
 from django.test import TestCase
 
-from os import system
-import time
+from mirror.libs import pull
+from mirror.models import GlobalConfigs, DBConfigs, PTOra11gR2
+from orm.datas import globalconfigs, dbconfigs, ptora11gr2
 
-from puller.libs import pull
-from puller.libs import exceptions
+# prepare init data for tables in test database
 
-# gc orm table
-from puller.models import GlobalConfigs
-from puller.datas import globalconfigs_handler
-gchandler = globalconfigs_handler.Handler()
-gchandler.orm = GlobalConfigs
+gc_handler = globalconfigs.Handler()
+dc_handler = dbconfigs.Handler()
+pt_handler = ptora11gr2.Handler()
 
-# dc orm table
-from puller.models import DBConfigs
-from puller.datas import dbconfigs_handler
-dchandler = dbconfigs_handler.Handler()
-dchandler.orm = DBConfigs
-
-# pt orm table
-from puller.models import PTOra11gR2
-from puller.datas import ptora11gr2_handler
-pthandler = ptora11gr2_handler.Handler()
-pthandler.orm = PTOra11gR2
+gc_handler.orm = GlobalConfigs
+dc_handler.orm = DBConfigs
+pt_handler.orm = PTOra11gR2
 
 # todo : some open should be closed after raise exceptions like asserts
+
 
 class PullTest(TestCase):
 
@@ -32,9 +23,9 @@ class PullTest(TestCase):
 
         # put init datas into tmp orm table
 
-        gchandler.putin()
-        dchandler.putin()
-        pthandler.putin()
+        gc_handler.putin()
+        dc_handler.putin()
+        pt_handler.putin()
 
         # get basic varibles
 

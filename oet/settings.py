@@ -39,8 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'gather',
     'mirror',
-    'orm',
-    'webpage',
+    'pages',
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -59,7 +58,7 @@ ROOT_URLCONF = 'oet.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'webpage/templates')]
+        'DIRS': [os.path.join(BASE_DIR, 'pages/templates')]
         ,
         'APP_DIRS': True,
         'OPTIONS': {

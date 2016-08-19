@@ -1,5 +1,6 @@
 import cx_Oracle
-import exceptions
+from mirror.libs import exceptions
+
 
 class Puller:
 
@@ -14,7 +15,7 @@ class Puller:
         exceptions.ConfigGetError
     """
 
-    def __init__(self,dbconfig):
+    def __init__(self, dbconfig):
 
         """puller init"""
 
@@ -34,14 +35,14 @@ class Puller:
             user = self.dbconfig.user
             password = self.dbconfig.password
             dns = self.dbconfig.ip + ":" + self.dbconfig.port + "/" + self.dbconfig.service
-        except Exception,e:
+        except Exception as e:
             msg = "Configs Get Error,please your configs. %s" % e
             raise exceptions.ConfigGetError(msg)
 
         try:
             self.connection = cx_Oracle.connect(user,password,dns,threaded = True) # raise
             print dns
-        except Exception,e:
+        except Exception as e:
             msg = "Connect to target oracle db failed,dns is %s. %s" % (dns,e)
             raise exceptions.ORACLEConnectError(msg)
 
@@ -62,4 +63,3 @@ class Puller:
     def close(self):
         """close connection"""
         self._disconnect()
-

@@ -1,6 +1,9 @@
 import time
+
 import redis
-from puller.models import GlobalConfigs
+
+from mirror.models import GlobalConfigs
+
 
 # verify exceptions
 class VerifyException(Exception):

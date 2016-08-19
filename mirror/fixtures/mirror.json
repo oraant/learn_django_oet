@@ -1,0 +1,146 @@
+[
+{
+    "model": "mirror.globalconfig",
+    "pk": 1,
+    "fields": {
+        "name": "default",
+        "enable": true,
+        "desc": "default settings",
+        "run": true,
+        "log_level": "30"
+    }
+},
+{
+    "model": "mirror.globalconfig",
+    "pk": 2,
+    "fields": {
+        "name": "test config",
+        "enable": false,
+        "desc": "just for test",
+        "run": true,
+        "log_level": "0"
+    }
+},
+{
+    "model": "mirror.redisserver",
+    "pk": 1,
+    "fields": {
+        "name": "local redis",
+        "enable": true,
+        "desc": "Redis Server at localhost",
+        "ip": "127.0.0.1",
+        "port": "6379",
+        "password": "",
+        "db": 0
+    }
+},
+{
+    "model": "mirror.redisserver",
+    "pk": 2,
+    "fields": {
+        "name": "test redis",
+        "enable": true,
+        "desc": "just for test",
+        "ip": "192.168.10.102",
+        "port": "6379",
+        "password": "",
+        "db": 0
+    }
+},
+{
+    "model": "mirror.mysqlserver",
+    "pk": 1,
+    "fields": {
+        "name": "local mysql",
+        "enable": true,
+        "desc": "MySQL Server at localhost.",
+        "ip": "127.0.0.1",
+        "port": "3306",
+        "user": "django",
+        "password": "django",
+        "db": "oet"
+    }
+},
+{
+    "model": "mirror.mysqlserver",
+    "pk": 2,
+    "fields": {
+        "name": "test mysql",
+        "enable": false,
+        "desc": "just for test",
+        "ip": "192.168.10.3",
+        "port": "3306",
+        "user": "root",
+        "password": "123456",
+        "db": "test"
+    }
+},
+{
+    "model": "mirror.oracletarget",
+    "pk": 1,
+    "fields": {
+        "name": "db11g",
+        "enable": true,
+        "desc": "remote database.",
+        "version": "11.2.0.1.0",
+        "rac": false,
+        "dbid": "363264677",
+        "instance": 1,
+        "ip": "192.168.10.102",
+        "port": "1521",
+        "user": "system",
+        "password": "oracle",
+        "service": "db11g",
+        "tables": "Ora11gR2"
+    }
+},
+{
+    "model": "mirror.oracletarget",
+    "pk": 2,
+    "fields": {
+        "name": "test oracle",
+        "enable": false,
+        "desc": "just for test",
+        "version": "11.2.0.1.0",
+        "rac": false,
+        "dbid": "1",
+        "instance": 1,
+        "ip": "192.168.10.3",
+        "port": "1521",
+        "user": "cismon",
+        "password": "cismon",
+        "service": "db11g",
+        "tables": "Ora11gR2"
+    }
+},
+{
+    "model": "mirror.ora11gr2",
+    "pk": 1,
+    "fields": {
+        "name": "test_v$database",
+        "enable": true,
+        "desc": "test for v$database",
+        "period": "00:01:10",
+        "pull": "select dbid,name,open_mode,log_mode from v$database",
+        "create": "create table IF NOT EXISTS <TABLE_NAME>(\r\n    dbid int,\r\n    name varchar(30),\r\n    open_mode varchar(20),\r\n    log_mode varchar(20))\r\nENGINE = MEMORY",
+        "drop": "drop table <TABLE_NAME>",
+        "insert": "insert into <TABLE_NAME>\r\n    (dbid,name,open_mode,log_mode)\r\n    values (%s,%s,%s,%s)",
+        "delete": "delete from <TABLE_NAME>"
+    }
+},
+{
+    "model": "mirror.ora11gr2",
+    "pk": 2,
+    "fields": {
+        "name": "test_v$sysstat",
+        "enable": true,
+        "desc": "test for v$sysstat",
+        "period": "00:00:20",
+        "pull": "select statistic#,name,class,value,stat_id\r\n    from v$sysstat\r\n    where name like '%DB time%'",
+        "create": "create table IF NOT EXISTS <TABLE_NAME>(\r\n    statistic bigint,\r\n    name varchar(64),\r\n    class bigint,\r\n    value bigint,\r\n    stat_id bigint)\r\nENGINE = MEMORY",
+        "drop": "drop table <TABLE_NAME>",
+        "insert": "insert into <TABLE_NAME>\r\n    (statistic,name,class,value,stat_id)\r\n    values (%s,%s,%s,%s,%s)",
+        "delete": "delete from <TABLE_NAME>"
+    }
+}
+]

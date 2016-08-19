@@ -7,7 +7,7 @@ class Handler(BasicHandler):
 
     def __init__(self):
 
-        from orm.models import PTOra11gR2
+        from mirror.models import PTOra11gR2
         self.orm = PTOra11gR2
 
         self.fields = [
