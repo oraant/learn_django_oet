@@ -30,6 +30,9 @@ class GlobalConfig(models.Model):
     run = models.BooleanField(default=True, help_text="Do you want to start or stop this model at web level.")
     log_level = models.CharField(max_length=50, choices=LOG_LEVEL)
 
+    def __unicode__(self):
+        return self.name
+
 
 class RedisServer(models.Model):
 
@@ -70,6 +73,9 @@ class MySQLServer(models.Model):
     password = models.CharField(max_length=30, blank=True, null=True)
     db = models.CharField(max_length=30)
 
+    def __unicode__(self):
+        return self.name
+
 
 class OracleTarget(models.Model):
 
@@ -99,6 +105,9 @@ class OracleTarget(models.Model):
     service = models.CharField(max_length=30)
 
     tables = models.CharField(max_length=30, choices=TableSQLChoices)
+
+    def __unicode__(self):
+        return self.name
 
 
 class TableSQL(models.Model):
@@ -148,6 +157,9 @@ class TableSQL(models.Model):
         self.drop = self.drop.replace("<TABLE_NAME>", name)
         self.insert = self.insert.replace("<TABLE_NAME>", name)
         self.delete = self.delete.replace("<TABLE_NAME>", name)
+
+    def __unicode__(self):
+        return self.name
 
 
 class Ora11gR2(TableSQL):
