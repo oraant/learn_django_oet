@@ -2,7 +2,7 @@ from functools import partial
 
 import MySQLdb
 
-from mirror.models import GlobalConfigs
+from mirror.models import GlobalConfig
 # cache exceptions
 
 import _mysql_exceptions as msqexp
@@ -19,14 +19,14 @@ class Cacher:
         ORACLEConnectError 
     """
 
-    def __init__(self):
+    def __init__(self, dsn):
 
         """Init cacher instance"""
 
         self.tables = []  # the table names this cache created
         self._connect()
 
-    def _connect(self):
+    def _connect(self, dsn):
 
         """Connect to mysql server
 

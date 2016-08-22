@@ -2,7 +2,7 @@ from os import system
 
 from django.test import TestCase
 
-from mirror.libs import cache
+from mirror.libs import cacher
 from mirror.libs import exceptions
 from mirror.models import GlobalConfigs, DBConfigs, PTOra11gR2
 from orm.datas import globalconfigs, dbconfigs, ptora11gr2
@@ -57,7 +57,7 @@ class CacheTest(TestCase):
         GlobalConfigs.objects.get(name="mysql_port").delete()
 
         with self.assertRaises(exceptions.ConfigGetError):
-            c = cache.Cacher()
+            c = cacher.Cacher()
 
     def test_init_with_mysql_connect_fail(self):
         row = GlobalConfigs.objects.get(name="mysql_password")
@@ -65,7 +65,7 @@ class CacheTest(TestCase):
         row.save()
 
         with self.assertRaises(exceptions.MySQLConnectError):
-            c = cache.Cacher()
+            c = cacher.Cacher()
 
     def test_init_with_config_mistake(self):
         row = GlobalConfigs.objects.get(name="mysql_host")
@@ -73,12 +73,12 @@ class CacheTest(TestCase):
         row.save()
 
         with self.assertRaises(exceptions.MySQLConnectError):
-            c = cache.Cacher()
+            c = cacher.Cacher()
 
     # test cache() abnormal
 
     def test_cache_with_connection_closed(self):
-        c = cache.Cacher()
+        c = cacher.Cacher()
         c.cache(self.table, self.datas)
         c.close()
         with self.assertRaises(exceptions.MySQLOperationError):
@@ -96,7 +96,7 @@ class CacheTest(TestCase):
         '''  # mutable
         self._format(self.table)
 
-        c = cache.Cacher()
+        c = cacher.Cacher()
 
         with self.assertRaises(exceptions.MySQLOperationError):
             c.cache(self.table, self.datas)
@@ -106,7 +106,7 @@ class CacheTest(TestCase):
         self.table.delete = ''' delete * from <TABLE_NAME> '''  # mutable
         self._format(self.table)
 
-        c = cache.Cacher()
+        c = cacher.Cacher()
 
         with self.assertRaises(exceptions.MySQLOperationError):
             c.cache(self.table, self.datas)
@@ -116,7 +116,7 @@ class CacheTest(TestCase):
         self.table.delete = ''' delete from wrongtabl '''  # mutable
         self._format(self.table)
 
-        c = cache.Cacher()
+        c = cacher.Cacher()
 
         with self.assertRaises(exceptions.MySQLOperationError):
             c.cache(self.table, self.datas)
@@ -130,7 +130,7 @@ class CacheTest(TestCase):
 
         self._format(self.table)
 
-        c = cache.Cacher()
+        c = cacher.Cacher()
 
         with self.assertRaises(exceptions.MySQLOperationError):
             c.cache(self.table, self.datas)
@@ -145,7 +145,7 @@ class CacheTest(TestCase):
 
         self._format(self.table)
 
-        c = cache.Cacher()
+        c = cacher.Cacher()
 
         with self.assertRaises(exceptions.MySQLOperationError):
             c.cache(self.table, self.datas)
@@ -154,7 +154,7 @@ class CacheTest(TestCase):
     def test_cache_with_wrong_data_column(self):
         self.datas = [(15, 'DB time', 3, 2777336)]  # mutable
 
-        c = cache.Cacher()
+        c = cacher.Cacher()
 
         with self.assertRaises(exceptions.MySQLOperationError):
             c.cache(self.table, self.datas)
@@ -166,7 +166,7 @@ class CacheTest(TestCase):
         self.table.drop = ''' drop <TABLE_NAME> '''
         self._format(self.table)
 
-        c = cache.Cacher()
+        c = cacher.Cacher()
         c.cache(self.table, self.datas)
 
         with self.assertRaises(exceptions.MySQLOperationError):
@@ -175,7 +175,7 @@ class CacheTest(TestCase):
     # test __init__() and cache() and close()
 
     def test_init_and_cache(self):
-        c = cache.Cacher()
+        c = cacher.Cacher()
         c.cache(self.table, self.datas)
         result = c.show("select * from db11g_test_v$sysstat")  # mutable # todo : now
         self.assertEquals(result[0][0], 15)

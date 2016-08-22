@@ -177,6 +177,8 @@ class OracleTarget(models.Model):
     service = models.CharField(max_length=30)
 
     tables = models.CharField(max_length=30, choices=TableSQLChoices)
+    mysql = models.ForeignKey(MySQLServer)
+    redis = models.ForeignKey(RedisServer)
 
     def __unicode__(self):
         return self.name

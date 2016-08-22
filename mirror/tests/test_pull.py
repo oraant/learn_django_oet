@@ -1,6 +1,6 @@
 from django.test import TestCase
 
-from mirror.libs import pull
+from mirror.libs import puller
 from mirror.models import GlobalConfigs, DBConfigs, PTOra11gR2
 from orm.datas import globalconfigs, dbconfigs, ptora11gr2
 
@@ -38,7 +38,7 @@ class PullTest(TestCase):
     def test_init_with_config_error(self):
 
         self.dbconfig.host=3
-        self.puller = pull.Puller(self.dbconfig)
+        self.puller = puller.Puller(self.dbconfig)
 
         #with self.assertRaises(exceptions.ConfigGetError):
         #    self.puller = pull.Puller(self.dbconfig)
