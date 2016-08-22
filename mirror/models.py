@@ -118,7 +118,7 @@ class RedisServer(models.Model):
     desc = models.CharField(max_length=300)
 
     ip = models.GenericIPAddressField()
-    port = models.CharField(max_length=30)
+    port = models.IntegerField()
     password = models.CharField(max_length=30, blank=True, null=True)
     db = models.SmallIntegerField()
 
@@ -139,7 +139,7 @@ class MySQLServer(models.Model):
     desc = models.CharField(max_length=300)
 
     ip = models.GenericIPAddressField(help_text='Use 127.0.0.1 instead of localhost to enforce port')
-    port = models.CharField(max_length=30, help_text='Will not work if ip is localhost')
+    port = models.IntegerField(help_text='Will not work if ip is localhost')
     user = models.CharField(max_length=30)
     password = models.CharField(max_length=30, blank=True, null=True)
     db = models.CharField(max_length=30)
@@ -171,7 +171,7 @@ class OracleTarget(models.Model):
     instance = models.IntegerField()
 
     ip = models.GenericIPAddressField()
-    port = models.CharField(max_length=30)
+    port = models.IntegerField()
     user = models.CharField(max_length=30)
     password = models.CharField(max_length=30, blank=True, null=True)
     service = models.CharField(max_length=30)

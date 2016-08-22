@@ -1,25 +1,21 @@
 import cx_Oracle
-from mirror.libs import exceptions
+from mirror.libs.exceptions import NotEnableError, ORACLEConnectError, ORACLEOperationError
 
 
-class Puller:
+class Puller(object):
 
-    """Pull datas from target oracle database
-
-    Args:
-        dbconfig -- one row from orm table of DBConfigs
-
-    Exceptions:
-        exceptions.ORACLEConnectError
-        exceptions.ORACLEOperationError
-        exceptions.ConfigGetError
     """
 
-    def __init__(self, dbconfig):
+    """
 
-        """puller init"""
+    def __init__(self, dsn):
 
-        self.dbconfig = dbconfig
+        """
+        Get connection with target database if it's enabled.
+        :param dsn: instance of OracleTarget model
+        """
+
+        self.dsn = dsn
         self._connect()
 
     def _connect(self):

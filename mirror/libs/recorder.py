@@ -13,7 +13,7 @@ class ConfigGetFailed(VerifyException): pass
 class RedisSaveError(VerifyException): pass
 class RedisReadError(VerifyException): pass
 
-class Verify:
+class Recorder:
 
     def __init__(self):
         self._connect()

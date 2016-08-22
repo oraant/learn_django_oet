@@ -1,47 +1,54 @@
-from mirror.models import RedisServer, MySQLServer, OracleTarget
-from mirror.libs import puller, cacher, recorder
+from mirror.libs import puller, cacher, recorder, exceptions
+from sys import exit
+from apscheduler.schedulers.blocking import BlockingScheduler as Scheduler
+
 
 class Proxy:
 
-    def __init__(self, oracle_target):
-        self.target = oracle_target
+    """
+    
+    """
 
+    def __init__(self, oracle_target, logger):
+
+        """
+        Init things...
+
+        :param oracle_target: instance of OracleTarget model
+        :param logger: handle output logs
+        """
+
+        # get oracle target
+        self.target = oracle_target
+        self.logger = logger
+
+        # get tables to pull
         exec "from mirror.models import " + self.target.tables
         self.tables = eval(self.target.tables).objects.all()
-        map(self._format,self.tables)
 
-        self.cacher = cacher.Cacher(mysql_dsn)
-        self.puller = puller.Puller(oracle_dsn)
-        self.verify = recorder.Verify(redis_dsn)
-
-    def _get_configs(self):
-        mysql_dsn = MySQLServer.objects.filter(enable=True)
-        redis_dsn = RedisServer.objects.filter(enable=True)
-        oracle_dsn = MySQLServer.objects.filter(enable=True)
+        # get workers if they are all enabled
+        try:
+            self.cacher = cacher.Cacher(self.target.mysql)
+            self.recorder = recorder.Verify(self.target.redis)
+            self.puller = puller.Puller(self.target)
+        except exceptions.NotEnableError as e:
+            self.logger.warning(e)
+            exit(1)
 
     def run(self, table):
-        '''pull and cache,record in redis,and write logs'''
+        """
+        pull and cache,record in redis,and write logs
 
-        try:
-            datas = self.puller.pull(table)
-        except Exception as e:
-            print e
-            return
+        :param table:
+        :return:
+        """
 
-        try:
-            self.cacher.cache(table,datas)
-        except Exception as e:
-            print e
-            return
-
-        try:
-            self.verify.record(table.name)
-        except Exception as e:
-            print e
-            return
+        datas = self.puller.pull(table)
+        self.cacher.cache(table,datas)
+        self.verify.record(table.name)
 
     def schedule(self):
-        '''schedule jobs for every table'''
+        """schedule jobs for every table"""
         scheduler = Scheduler()
         for table in self.tables:
             print 'scheduler adding'
@@ -50,11 +57,11 @@ class Proxy:
 
         try:
             scheduler.start()
-        except Exception,e:
-            print '===',Exception,e
+        except Exception as e:
+            print '===', e
             print '=== an error occured,outing'
-        except KeyboardInterrupt,e:
-            print '===',KeyboardInterrupt,e
+        except KeyboardInterrupt as e:
+            print '===', e
             print '=== you want to stop,outing'
         finally:
             self.cacher.close()

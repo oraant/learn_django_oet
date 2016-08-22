@@ -7,7 +7,7 @@ from puller.libs import verify,pull,cache # todo: change to cacher and puller,no
 import daemon
 import multiprocessing as multi
 #from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
-from apscheduler.schedulers.blocking import BlockingScheduler as Scheduler
+
 
 import os,sys,time
 import logging,warnings

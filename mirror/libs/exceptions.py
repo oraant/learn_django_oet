@@ -15,6 +15,11 @@ class BasicException(Exception):
         return repr(self.value)
 
 
+class NotEnableError(BasicException):
+
+    """Exception raised when connect failed with MySQL"""
+
+
 class MySQLConnectError(BasicException):
 
     """Exception raised when connect failed with MySQL"""
@@ -39,6 +44,10 @@ class RedisConnectError(BasicException):
 
     """Exception raised for when connect with Redis"""
 
+
+class RedisOperationError(BasicException):
+
+    """Exception raised for when save or load data in Redis"""
 
 class ConfigGetError(BasicException):
 

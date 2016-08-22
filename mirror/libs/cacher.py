@@ -21,7 +21,10 @@ class Cacher:
 
     def __init__(self, dsn):
 
-        """Init cacher instance"""
+        """
+
+        :param dsn: instance of MySQLServer model
+        """
 
         self.tables = []  # the table names this cache created
         self._connect()
@@ -35,15 +38,6 @@ class Cacher:
             exceptions.MySQLConnectError
         """
 
-        try:  # get connect parameters
-            host = GlobalConfigs.objects.get(name="mysql_host").value
-            user = GlobalConfigs.objects.get(name="mysql_user").value
-            passwd = GlobalConfigs.objects.get(name="mysql_password").value
-            port = GlobalConfigs.objects.get(name="mysql_port").value
-            port = int(port)
-            db = GlobalConfigs.objects.get(name="mysql_db").value
-        except Exception as e:
-            raise exceptions.ConfigGetError("Error : %s" % e)
 
         try:  # try to connect
             self.conn = MySQLdb.connect(
