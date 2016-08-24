@@ -182,3 +182,6 @@ class OracleTarget(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    def dns(self):
+        return "%s:%d/%s" % (self.ip, self.port, self.service)

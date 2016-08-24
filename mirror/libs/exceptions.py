@@ -17,7 +17,7 @@ class BasicException(Exception):
 
 class NotEnableError(BasicException):
 
-    """Exception raised when connect failed with MySQL"""
+    """Exception raised when server or target configure in not enabled"""
 
 
 class MySQLConnectError(BasicException):

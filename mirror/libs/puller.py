@@ -1,61 +1,83 @@
-import cx_Oracle
 from mirror.libs.exceptions import NotEnableError, ORACLEConnectError, ORACLEOperationError
+import cx_Oracle
 
 
 class Puller(object):
 
     """
+    Pull data from target oracle database.
+
+    Args:
+        dsn (mirror.models.OracleTarget): get connection msg to connect with target oracle database.
+
+    Attributes:
+        connection (cx_Oracle.Connection)
+
+    Raises:
+        NotEnableError: If the dsn is configured as not enable, this will be raised.
+        ORACLEConnectError: If can't connect to target with this dsn, this will be raised.
 
     """
 
     def __init__(self, dsn):
 
-        """
-        Get connection with target database if it's enabled.
-        :param dsn: instance of OracleTarget model
-        """
+        # get dsn for
+        if dsn.enable:
+            self.dsn = dsn
+        else:
+            raise NotEnableError("Puller is not enabled.")
 
-        self.dsn = dsn
-        self._connect()
-
-    def _connect(self):
-
-        """connect to target database
-
-        Exceptions:
-            exceptions.ConfigGetError
-            exceptions.ORACLEConnectError
-        """
-
+        # get connection
         try:
-            user = self.dbconfig.user
-            password = self.dbconfig.password
-            dns = self.dbconfig.ip + ":" + self.dbconfig.port + "/" + self.dbconfig.service
+            self.connection = cx_Oracle.connect(dsn.user, dsn.password, dsn.dns(), threaded=True)
         except Exception as e:
-            msg = "Configs Get Error,please your configs. %s" % e
-            raise exceptions.ConfigGetError(msg)
-
-        try:
-            self.connection = cx_Oracle.connect(user,password,dns,threaded = True) # raise
-            print dns
-        except Exception as e:
-            msg = "Connect to target oracle db failed,dns is %s. %s" % (dns,e)
-            raise exceptions.ORACLEConnectError(msg)
-
-    def _disconnect(self):
-        """disconnect from target database"""
-        self.connection.close()
-
-    def pull(self,table):
-        """pull datas"""
-        cursor = self.connection.cursor()
-        try:
-            cursor.execute(table.pull)
-            datas = cursor.fetchall()
-        finally:
-            cursor.close()
-        return datas
+            # todo: can't report the right messages.
+            raise ORACLEConnectError(e)
 
     def close(self):
-        """close connection"""
-        self._disconnect()
+        """
+        Disconnect from target database. Calling close() more than once is allowed.
+
+        Returns:
+            str: result status of closing connection.
+        """
+
+        try:
+            self.connection.close()
+        except cx_Oracle.InterfaceError as e:
+            msg = "Puller for %s has been closed with nothing opening." % self.dsn.name
+        else:
+            msg = "Puller for %s has been closed." % self.dsn.name
+
+        return msg
+
+    def pull(self, table):
+        """
+        Pull data from target database.
+
+        Args:
+            table (mirror.models.TableSQL): the target Oracle's table to pull data from.
+
+        Raises:
+            ORACLEConnectError: get cursor from connection failed.
+            ORACLEOperationError: cursor can't execute sql statements.
+
+        Returns:
+            list: All data pulled from target table, with the format [(value1, value2), (value1, value2)]
+        """
+
+        # get cursor from connection
+        try:
+            cursor = self.connection.cursor()
+        except cx_Oracle.InterfaceError as e:
+            raise ORACLEConnectError(e)
+
+        # execute sql statement and get data
+        try:
+            cursor.execute(table.pull)
+        except cx_Oracle.DatabaseError as e:
+            raise ORACLEOperationError(e)
+        else:
+            return cursor.fetchall()
+        finally:
+            cursor.close()
