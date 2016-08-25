@@ -14,7 +14,7 @@
     "model": "mirror.globalconfig",
     "pk": 2,
     "fields": {
-        "name": "test configg",
+        "name": "test config",
         "enable": false,
         "desc": "just for test",
         "run": true,
@@ -116,7 +116,7 @@
         "rac": false,
         "dbid": "363264677",
         "instance": 1,
-        "ip": "192.168.10.107",
+        "ip": "192.168.10.105",
         "port": 1521,
         "user": "system",
         "password": "oracle",

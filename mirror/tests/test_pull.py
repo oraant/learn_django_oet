@@ -6,7 +6,7 @@ from importlib import import_module
 
 class PullTest(TestCase):
 
-    fixtures = ["m2.json"]
+    fixtures = ["test.json"]
 
     def setUp(self):
 
@@ -15,6 +15,13 @@ class PullTest(TestCase):
 
     # test __init__() abnormal
     def test_init(self):
+
         p = puller.Puller(self.target)
-        p.pull(self.tables.objects.all()[0])
-        p.close()
+
+        try:
+            data = p.pull(self.tables.objects.all()[0])
+            self.assertEqual(data[0][2], 'READ WRITE')
+        except:
+            raise
+        finally:
+            p.close()

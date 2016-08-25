@@ -3,25 +3,26 @@ import cx_Oracle
 
 
 class Puller(object):
-
     """
     Pull data from target oracle database.
 
-    Args:
-        dsn (mirror.models.OracleTarget): get connection msg to connect with target oracle database.
-
     Attributes:
-        connection (cx_Oracle.Connection)
-
-    Raises:
-        NotEnableError: If the dsn is configured as not enable, this will be raised.
-        ORACLEConnectError: If can't connect to target with this dsn, this will be raised.
-
+        connection (cx_Oracle.Connection): connection to target oracle database.
     """
 
     def __init__(self, dsn):
+        """
+        Connect to target oracle database.
 
-        # get dsn for
+        Args:
+            dsn: (mirror.models.OracleTarget): get connection msg to connect with target oracle database.
+
+        Raises:
+            NotEnableError: If the dsn is configured as not enable, this will be raised.
+            ORACLEConnectError: If can't connect to target with this dsn, this will be raised.
+        """
+
+        # get dsn for connection
         if dsn.enable:
             self.dsn = dsn
         else:
@@ -30,8 +31,7 @@ class Puller(object):
         # get connection
         try:
             self.connection = cx_Oracle.connect(dsn.user, dsn.password, dsn.dns(), threaded=True)
-        except Exception as e:
-            # todo: can't report the right messages.
+        except cx_Oracle.InterfaceError as e:
             raise ORACLEConnectError(e)
 
     def close(self):
@@ -53,17 +53,18 @@ class Puller(object):
 
     def pull(self, table):
         """
-        Pull data from target database.
+        Pull data from target database with generating a cursor and executing the pull sql of table arg.
 
         Args:
             table (mirror.models.TableSQL): the target Oracle's table to pull data from.
 
         Raises:
-            ORACLEConnectError: get cursor from connection failed.
+            ORACLEConnectError: get cursor from connection failed.Maybe
             ORACLEOperationError: cursor can't execute sql statements.
 
         Returns:
             list: All data pulled from target table, with the format [(value1, value2), (value1, value2)]
+
         """
 
         # get cursor from connection
@@ -73,6 +74,7 @@ class Puller(object):
             raise ORACLEConnectError(e)
 
         # execute sql statement and get data
+        # todo: sql maybe hanged because of network error or server overload.Stop it and raise error for interval run.
         try:
             cursor.execute(table.pull)
         except cx_Oracle.DatabaseError as e:
