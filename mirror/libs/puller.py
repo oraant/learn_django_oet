@@ -7,6 +7,7 @@ class Puller(object):
     Pull data from target oracle database.
 
     Attributes:
+        dsn: (mirror.models.OracleTarget): get connection msg to connect with target oracle database.
         connection (cx_Oracle.Connection): connection to target oracle database.
     """
 
@@ -15,11 +16,11 @@ class Puller(object):
         Connect to target oracle database.
 
         Args:
-            dsn: (mirror.models.OracleTarget): get connection msg to connect with target oracle database.
+            dsn (mirror.models.OracleTarget): get connection msg to connect with target oracle database.
 
         Raises:
-            NotEnableError: If the dsn is configured as not enable, this will be raised.
-            ORACLEConnectError: If can't connect to target with this dsn, this will be raised.
+            NotEnableError: The dsn is configured as not enable.
+            ORACLEConnectError: Can't connect to target oracle database with this dsn.
         """
 
         # get dsn for connection
@@ -45,7 +46,7 @@ class Puller(object):
         try:
             self.connection.close()
         except cx_Oracle.InterfaceError as e:
-            msg = "Puller for %s has been closed with nothing opening." % self.dsn.name
+            msg = "Puller for %s has been closed with nothing opening.Msg is %s" % (self.dsn.name, e)
         else:
             msg = "Puller for %s has been closed." % self.dsn.name
 
@@ -56,14 +57,14 @@ class Puller(object):
         Pull data from target database with generating a cursor and executing the pull sql of table arg.
 
         Args:
-            table (mirror.models.TableSQL): the target Oracle's table to pull data from.
+            table (mirror.models.TableCollections): the target Oracle's table to pull data from.
 
         Raises:
             ORACLEConnectError: get cursor from connection failed.Maybe
             ORACLEOperationError: cursor can't execute sql statements.
 
         Returns:
-            list: All data pulled from target table, with the format [(value1, value2), (value1, value2)]
+            list[tuple]: All data pulled from target table.
 
         """
 
@@ -73,7 +74,7 @@ class Puller(object):
         except cx_Oracle.InterfaceError as e:
             raise ORACLEConnectError(e)
 
-        # execute sql statement and get data
+        # execute sql statement to get data, and close cursor finally.
         # todo: sql maybe hanged because of network error or server overload.Stop it and raise error for interval run.
         try:
             cursor.execute(table.pull)

@@ -1,170 +1,120 @@
-from functools import partial
-
+from mirror.libs.exceptions import NotEnableError, MySQLConnectError, MySQLOperationError
 import MySQLdb
-
-from mirror.models import GlobalConfig
-# cache exceptions
-
-import _mysql_exceptions as msqexp
-from mirror.libs import exceptions
+import warnings
 
 
 class Cacher:
 
-    """cache datas to a table in mysql database.
+    """
+    Cache data to mysql database's temporary tables.
 
-    Exceptions:
-        MySQLConnectError
-        MySQLOperationError
-        ORACLEConnectError 
+    Attributes:
+        connection (MySQLdb.connections.Connection): connection to MySQL server.
     """
 
-    def __init__(self, dsn):
+    def __init__(self, dsn, target_name):
 
         """
+        Connect to MySQL server and generate a database to create temporary tables.
 
-        :param dsn: instance of MySQLServer model
+        Args:
+            dsn (mirror.models.MySQLServer): MySQL Server connect information.
+            target_name (str): database name in the MySQL server to create cache tables.
+        Raises:
+            NotEnableError: The dsn is configured as not enable.
+            MySQLConnectError: Can't connect to MySQL Server with the dsn or can't create new databases.
         """
 
-        self.tables = []  # the table names this cache created
-        self._connect()
+        # ignore special warnings for now and further calling of functions.
+        # self._ignore_warnings()
 
-    def _connect(self, dsn):
+        # get database name with prefix and connection dsn
+        if dsn.enable:
+            self.dsn = dsn
+        else:
+            raise NotEnableError("Cacher is not enabled.")
 
-        """Connect to mysql server
+        # get connection
+        try:
+            self.connection = MySQLdb.connect(host=dsn.ip, user=dsn.user, passwd=dsn.password, port=dsn.port)
+        except MySQLdb.OperationalError as e:
+            raise MySQLConnectError(e)
 
-        Exceptions:
-            exceptions.ConfigGetError
-            exceptions.MySQLConnectError
-        """
+        # create and connect to database
+        cursor = self.connection.cursor()
+        self.db = dsn.prefix + target_name
+        sql = "CREATE DATABASE IF NOT EXISTS %s DEFAULT CHARACTER SET utf8" % self.db
 
-
-        try:  # try to connect
-            self.conn = MySQLdb.connect(
-                host=host,
-                user=user,
-                passwd=passwd,
-                db=db,
-                port=port
-            )
-        except msqexp.OperationalError as e:
-            raise exceptions.MySQLConnectError("Error : %s" % e)
-
-    def _disconnect(self):
-
-        """disconnect from mysql server"""
-
-        self.conn.close()
+        try:
+            cursor.execute(sql)
+        except MySQLdb.OperationalError as e:
+            cursor.close()
+            self.connection.close()
+            raise MySQLConnectError(e)
+        else:
+            cursor.close()
+            self.connection.select_db(self.db)
 
     @staticmethod
-    def _create(cursor, table):  # raise
+    def _ignore_warnings():
+        """ignore warnings when create or drop databases and tables. This method doesn't handle exceptions."""
+        # todo: optimize to model method with a standard docstring and goodness performance.
+        # todo-warning: database exists won't be filter but the cache method's can be filter
+        ignore_warns = ["database exists", "database doesn't exist", "Table .* already exists", "Unknown table"]
+        warnings.filterwarnings("ignore", '|'.join(ignore_warns))
 
-        """create cache table if not exists,and ignore the exists warning"""
+    def cache(self, table, data):
+        """
+        Update data into cache tables.
+
+        Args:
+            table (mirror.models.TableCollections): a table with sql statements.
+            data (list[tuple]): data you want to cache into table.
+
+        Raises:
+            MySQLConnectError: cursor can't connect to server,or permission denied, or others.
+            MySQLOperationError: sql statements have syntax,or doesn't compatibly with data.
+        """
+
+        cursor = self.connection.cursor()  # this will not raise exceptions even the connection is closed.
 
         try:
             cursor.execute(table.create)
-
-        except msqexp.Warning as e:
-            if str(e).find('already exists') == -1:
-                raise
-
-        except msqexp.ProgrammingError as e:
-            msg = "Create cache table failed,Please Check your create sql. %s" % e
-            raise exceptions.MySQLOperationError(msg)
-
-        except msqexp.InterfaceError as e:
-            msg = "Create cache table failed,Please Check your call order. %s" % e
-            raise exceptions.MySQLOperationError(msg)
-
-    @staticmethod
-    def _drop(cursor, table):  # raise
-
-        """drop cache table"""
-
-        try:
-            cursor.execute(table.drop)
-        except msqexp.ProgrammingError as e:
-            msg = "Drop cache table failed,Please Check your drop sql. %s" % e
-            raise exceptions.MySQLOperationError(msg)
-
-    @staticmethod
-    def _insert(cursor, table, datas):  # raise
-
-        """insert datas into cache table"""
-
-        try:
-            cursor.executemany(table.insert, datas)
-        except (TypeError,
-                msqexp.ProgrammingError,
-                msqexp.OperationalError) as e:
-            msg = "Insert datas failed,Please Check your insert sql or datas. %s" % e
-            raise exceptions.MySQLOperationError(msg)
-
-    @staticmethod
-    def _delete(cursor, table):  # raise
-
-        """delete datas from cache table"""
-
-        try:
             cursor.execute(table.delete)
-        except msqexp.ProgrammingError as e:
-            msg = "Delete datas failed,Please Check your delete sql. %s" % e
-            raise exceptions.MySQLOperationError(msg)
+            cursor.executemany(table.insert, data)
 
-    def cache(self, table, datas):
+        # maybe you want to generate a cursor after connection is closed.
+        except MySQLdb.InterfaceError as e:
+            raise MySQLConnectError(e)
 
-        """update datas into cache tables
+        # MySQL server closed, or permission denied, or others.
+        except MySQLdb.OperationalError as e:
+            raise MySQLConnectError(e)
 
-        Args:
-            table -- orm row in pull tables,you must replace <TABLE_NAME> first
-            datas -- datas pulled from target oracle,make sure it'a list with tuples
+        # sql statements have syntax error.
+        except MySQLdb.ProgrammingError as e:
+            raise MySQLOperationError(e)
 
-        Exceptions:
-            exceptions.MySQLOperationError
-        """
+        # data columns's number is not equal to sql statements's values number.
+        except TypeError as e:
+            raise MySQLOperationError(e)
 
-        cursor = self.conn.cursor()
-
-        try:
-            self._create(cursor, table)
-            self._delete(cursor, table)
-            self._insert(cursor, table, datas)
-            self.tables.append(table)
-        except exceptions.MySQLOperationError as e:
-            raise
-        finally:
-            cursor.close()
-
-    def show(self, sql):
-
-        """use for unit test"""
-
-        cursor = self.conn.cursor()
-        try:
-            cursor.execute(sql)
-            # def f(x):print x
-            # map(f,cursor.fetchall())
-            return cursor.fetchall()
-        except:
-            raise
         finally:
             cursor.close()
 
     def close(self):
+        """
+        Close self.connection. Calling close() more than once is allowed.
 
-        """drop cache tables
-
-        Exceptions:
-            exceptions.MySQLOperationError
+        Returns:
+            str: result status of closing connection.
         """
 
-        cursor = self.conn.cursor()
-        drop = partial(self._drop, cursor)
-
         try:
-            map(drop, self.tables)
-        except exceptions.MySQLOperationError as e:
-            raise
-        finally:
-            cursor.close()
-            self._disconnect()
+            self.connection.close()
+        except MySQLdb.ProgrammingError as e:
+            msg = "Cacher for %s has been closed with nothing opening.Msg is %s" % (self.dsn.name, e)
+        else:
+            msg = "Cacher for %s has been closed." % self.dsn.name
+
+        return msg

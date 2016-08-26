@@ -35,7 +35,7 @@ class Proxy(object):
         # get workers if they are all enabled and connectable
         try:
             self.puller = puller.Puller(self.target)
-            self.cacher = cacher.Cacher(self.target.mysql)
+            self.cacher = cacher.Cacher(self.target.mysql, self.target.name)
             self.recorder = recorder.Verify(self.target.redis)
 
         except exc.NotEnableError as e:
@@ -88,7 +88,7 @@ class Proxy(object):
         Pull and cache data from target table into mysql server,and record status into redis server.
 
         Args:
-            table (mirror.models.TableSQL): target table want to pull from target oracle.
+            table (mirror.models.TableCollections): target table want to pull from target oracle.
         """
 
         data = self.puller.pull(table)
