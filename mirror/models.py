@@ -59,7 +59,8 @@ class TableSQL(models.Model):
     oracle_sql_validators = [oracle_special_sign]
     create_sql_validators = [mysql_special_sign, if_not_exists, engine_is_memory]
     insert_sql_validators = [mysql_special_sign, placeholder]
-    drop_delete_validators = [mysql_special_sign, if_exists]
+    drop_validators = [mysql_special_sign, if_exists]
+    delete_validators = [mysql_special_sign]
 
     # fields
 
@@ -70,9 +71,9 @@ class TableSQL(models.Model):
 
     pull = models.TextField(max_length=900, validators=oracle_sql_validators)
     create = models.TextField(max_length=900, validators=create_sql_validators)
-    drop = models.TextField(max_length=900, validators=drop_delete_validators)
+    drop = models.TextField(max_length=900, validators=drop_validators)
     insert = models.TextField(max_length=900, validators=insert_sql_validators)
-    delete = models.TextField(max_length=900, validators=drop_delete_validators)
+    delete = models.TextField(max_length=900, validators=delete_validators)
 
     @classmethod
     def subclass_name(cls):

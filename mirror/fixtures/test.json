@@ -30,10 +30,10 @@
         "desc": "test for v$database",
         "period": "00:01:10",
         "pull": "select dbid,name,open_mode,log_mode from v$database",
-        "create": "create table IF NOT EXISTS <TABLE_NAME>(\r\n    dbid int,\r\n    name varchar(30),\r\n    open_mode varchar(20),\r\n    log_mode varchar(20))\r\nENGINE = MEMORY",
-        "drop": "drop table <TABLE_NAME>",
-        "insert": "insert into <TABLE_NAME>\r\n    (dbid,name,open_mode,log_mode)\r\n    values (%s,%s,%s,%s)",
-        "delete": "delete from <TABLE_NAME>"
+        "create": "create table IF NOT EXISTS test_v$database(\r\n    dbid int,\r\n    name varchar(30),\r\n    open_mode varchar(20),\r\n    log_mode varchar(20))\r\nENGINE = MEMORY",
+        "drop": "drop table test_v$database if exists",
+        "insert": "insert into test_v$database\r\n    (dbid,name,open_mode,log_mode)\r\n    values (%s,%s,%s,%s)",
+        "delete": "delete from test_v$database"
     }
 },
 {
@@ -45,10 +45,10 @@
         "desc": "test for v$sysstat",
         "period": "00:00:20",
         "pull": "select statistic#,name,class,value,stat_id\r\n    from v$sysstat\r\n    where name like '%DB time%'",
-        "create": "create table IF NOT EXISTS <TABLE_NAME>(\r\n    statistic bigint,\r\n    name varchar(64),\r\n    class bigint,\r\n    value bigint,\r\n    stat_id bigint)\r\nENGINE = MEMORY",
-        "drop": "drop table <TABLE_NAME>",
-        "insert": "insert into <TABLE_NAME>\r\n    (statistic,name,class,value,stat_id)\r\n    values (%s,%s,%s,%s,%s)",
-        "delete": "delete from <TABLE_NAME>"
+        "create": "create table IF NOT EXISTS test_v$sysstat(\r\n    statistic bigint,\r\n    name varchar(64),\r\n    class bigint,\r\n    value bigint,\r\n    stat_id bigint)\r\nENGINE = MEMORY",
+        "drop": "drop table test_v$sysstat if exists",
+        "insert": "insert into test_v$sysstat\r\n    (statistic,name,class,value,stat_id)\r\n    values (%s,%s,%s,%s,%s)",
+        "delete": "delete from test_v$sysstat"
     }
 },
 {
@@ -116,7 +116,7 @@
         "rac": false,
         "dbid": "363264677",
         "instance": 1,
-        "ip": "192.168.10.105",
+        "ip": "192.168.10.107",
         "port": 1521,
         "user": "system",
         "password": "oracle",
