@@ -88,10 +88,10 @@ class Ora11gR2(TableSQL):
 
     class Meta:
         verbose_name = "Oracle 11G R2 table sql"
-        verbose_name_plural = "Oracle 11G R2 table sqls"
+        verbose_name_plural = "[Table SQL] Oracle 11G R2"
 
 
-# servers for redis and mysql
+# servers for redis and mysql, and target oracle databases.
 
 
 class RedisServer(models.Model):
