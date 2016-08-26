@@ -7,7 +7,6 @@ from django.core.validators import RegexValidator
 
 
 class GlobalConfig(models.Model):
-
     """Global configs with mirror model"""
 
     LOG_LEVEL = (
@@ -34,11 +33,10 @@ class GlobalConfig(models.Model):
         return self.name
 
 
-# table sql when cache table into mysql server,abstract class and subclasses all here
+# table collections with sql statements for pull and cache,abstract class and subclasses all here.
 
 
-class TableSQL(models.Model):
-
+class TableCollections(models.Model):
     """SQLs the process need if you want to mirror Target tables."""
 
     class Meta:
@@ -71,32 +69,30 @@ class TableSQL(models.Model):
 
     pull = models.TextField(max_length=900, validators=oracle_sql_validators)
     create = models.TextField(max_length=900, validators=create_sql_validators)
-    drop = models.TextField(max_length=900, validators=drop_validators)
+    drop = models.TextField(max_length=900, validators=drop_validators)  # won't be used in this version.
     insert = models.TextField(max_length=900, validators=insert_sql_validators)
     delete = models.TextField(max_length=900, validators=delete_validators)
 
     @classmethod
     def subclass_name(cls):
-        return cls._meta.verbose_name
+        return cls._meta.verbose_name_plural
 
     def __unicode__(self):
         return self.name
 
 
-class Ora11gR2(TableSQL):
-
+class Ora11gR2(TableCollections):
     """Tables of Oracle whose version is 11gR2."""
 
     class Meta:
-        verbose_name = "Oracle 11G R2 table sql"
-        verbose_name_plural = "[Table SQL] Oracle 11G R2"
+        verbose_name = "[Table Collections] Oracle 11G R2's table"
+        verbose_name_plural = "[Table Collections] Oracle 11G R2"
 
 
 # servers for redis and mysql, and target oracle databases.
 
 
 class RedisServer(models.Model):
-
     """Redis Server you want to record status"""
 
     class Meta:
@@ -117,7 +113,6 @@ class RedisServer(models.Model):
 
 
 class MySQLServer(models.Model):
-
     """MySQL Server you want to cache datas"""
 
     class Meta:
@@ -132,14 +127,14 @@ class MySQLServer(models.Model):
     port = models.IntegerField(help_text='Will not work if ip is localhost')
     user = models.CharField(max_length=30, help_text="the user need privileges to create or drop databases and tables!")
     password = models.CharField(max_length=30, blank=True, null=True)
-    db = models.CharField(max_length=30)
+    prefix = models.CharField(max_length=30, default="mirror_",
+                              help_text="prefix of databases' name to avoid name conflict.")
 
     def __unicode__(self):
         return self.name
 
 
 class OracleTarget(models.Model):
-
     """Targets oracle database you want to monitor."""
 
     class Meta:
@@ -147,7 +142,7 @@ class OracleTarget(models.Model):
         verbose_name_plural = "Oracle Targets"
 
     # choices
-    table_sql_list = [(x.__name__, x.subclass_name()) for x in TableSQL.__subclasses__()]
+    table_sql_list = [(x.__name__, x.subclass_name()) for x in TableCollections.__subclasses__()]
     TableSQLChoices = tuple(table_sql_list)
 
     # fields

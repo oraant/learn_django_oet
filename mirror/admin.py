@@ -14,7 +14,7 @@ class BasicAdmin(admin.ModelAdmin):
 @admin.register(Ora11gR2)
 class TableSQLAdmin(admin.ModelAdmin):
 
-    """Admin for TableSQL Models,Notice that TableSQL is an abstract base class."""
+    """Admin for TableCollections Models,Notice that TableCollections is an abstract base class."""
 
     list_display = ('id', 'name', 'enable', 'desc', 'period')
 
