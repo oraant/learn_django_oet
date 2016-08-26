@@ -49,17 +49,17 @@ class TableSQL(models.Model):
     oracle_special_sign = RegexValidator(regex=r';', inverse_match=True, message="Please Don't Input signs like ';'")
     mysql_special_sign = RegexValidator(regex=r';|#', inverse_match=True,
                                         message="Please Don't Input signs like ';' , '#'")
-    table_name = RegexValidator(regex=r'\<TABLE_NAME\>', message="Please Input <TABLE_NAME> !")
-    if_not_exists = RegexValidator(regex=r'(?i)if not exists', message="Please Input 'IF NOT EXISTS' !")
-    engine_is_memory = RegexValidator(regex=r'(?i)engine.*=.*memory', message="Please Input 'ENGINE = MEMORY' !")
-    placeholder = RegexValidator(regex=r'\%s', message="Please Input %s !")
+    if_not_exists = RegexValidator(regex=r'(?i)if not exists', message="sql missed 'IF NOT EXISTS' !")
+    if_exists = RegexValidator(regex=r'(?i)if exists', message="sql missed 'IF EXISTS' !")
+    engine_is_memory = RegexValidator(regex=r'(?i)engine.*=.*memory', message="sql missed 'ENGINE = MEMORY' !")
+    placeholder = RegexValidator(regex=r'\%s', message="sql missed %s !")
 
     # Validators collections
 
     oracle_sql_validators = [oracle_special_sign]
-    create_sql_validators = [mysql_special_sign, table_name, if_not_exists, engine_is_memory]
-    insert_sql_validators = [mysql_special_sign, table_name, placeholder]
-    drop_delete_validators = [mysql_special_sign, table_name]
+    create_sql_validators = [mysql_special_sign, if_not_exists, engine_is_memory]
+    insert_sql_validators = [mysql_special_sign, placeholder]
+    drop_delete_validators = [mysql_special_sign, if_exists]
 
     # fields
 
@@ -73,17 +73,6 @@ class TableSQL(models.Model):
     drop = models.TextField(max_length=900, validators=drop_delete_validators)
     insert = models.TextField(max_length=900, validators=insert_sql_validators)
     delete = models.TextField(max_length=900, validators=drop_delete_validators)
-
-    # functions
-
-    def apply(self, name):
-
-        """Replace name to <TABLE_NAME> in cache sql statements."""
-
-        self.create = self.create.replace("<TABLE_NAME>", name)
-        self.drop = self.drop.replace("<TABLE_NAME>", name)
-        self.insert = self.insert.replace("<TABLE_NAME>", name)
-        self.delete = self.delete.replace("<TABLE_NAME>", name)
 
     @classmethod
     def subclass_name(cls):
@@ -140,7 +129,7 @@ class MySQLServer(models.Model):
 
     ip = models.GenericIPAddressField(help_text='Use 127.0.0.1 instead of localhost to enforce port')
     port = models.IntegerField(help_text='Will not work if ip is localhost')
-    user = models.CharField(max_length=30)
+    user = models.CharField(max_length=30, help_text="the user need privileges to create or drop databases and tables!")
     password = models.CharField(max_length=30, blank=True, null=True)
     db = models.CharField(max_length=30)
 

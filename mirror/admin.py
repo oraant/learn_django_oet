@@ -18,7 +18,7 @@ class TableSQLAdmin(admin.ModelAdmin):
 
     list_display = ('id', 'name', 'enable', 'desc', 'period')
 
-    fieldsets = (
+    fieldsets = (  # todo: field drop must include "if exists" statement.
         (
             None,{
                 'fields': ('name', 'enable', 'desc', 'period')
@@ -42,9 +42,6 @@ class TableSQLAdmin(admin.ModelAdmin):
                     <ol> 1，SQL语句的结尾不要添加分号 ';' ！ </ol>
                     <ol> 2，MySQL中特殊字符 '#' 尽量去掉！ </ol>
 
-                    <h3> MySQL SQL Syntax </h3>
-                    <ol> 1，用&lt;TABLE_NAME&gt;来代替不确定的表名！ </ol>
-
                     <h3> Create SQL Syntax </h3>
                     <ol> 1，Create语句中Oracle中的Number类型，对应MySQL中的Bigint类型！ </ol>
                     <ol> 2，Create语句必须加上 'if not exists'！ </ol>
@@ -52,6 +49,9 @@ class TableSQLAdmin(admin.ModelAdmin):
 
                     <h3> Insert SQL Syntax </h3>
                     <ol> 1，Insert中数据的值，必须使用%s来表示，不需要%d之类的！ </ol>
+
+                    <h3> Drop SQL Syntax </h3>
+                    <ol> 1，Drop语句必须加上 'if exists'！ </ol>
                 """,
                 'fields': ('create', 'drop', 'insert', 'delete')
             }
