@@ -20,6 +20,7 @@ class Cacher:
         Args:
             dsn (mirror.models.MySQLServer): MySQL Server connect information.
             target_name (str): database name in the MySQL server to create cache tables.
+
         Raises:
             NotEnableError: The dsn is configured as not enable.
             MySQLConnectError: Can't connect to MySQL Server with the dsn or can't create new databases.
@@ -28,7 +29,7 @@ class Cacher:
         # ignore special warnings for now and further calling of functions.
         # self._ignore_warnings()
 
-        # get database name with prefix and connection dsn
+        # make sure the dsn in enabled.
         if dsn.enable:
             self.dsn = dsn
         else:
@@ -40,7 +41,7 @@ class Cacher:
         except MySQLdb.OperationalError as e:
             raise MySQLConnectError(e)
 
-        # create and connect to database
+        # format the database name, then create and connect to it.
         cursor = self.connection.cursor()
         self.db = dsn.prefix + target_name
         sql = "CREATE DATABASE IF NOT EXISTS %s DEFAULT CHARACTER SET utf8" % self.db
