@@ -37,7 +37,7 @@ class Cacher:
 
         # get connection
         try:
-            self.connection = MySQLdb.connect(host=dsn.ip, user=dsn.user, passwd=dsn.password, port=dsn.port)
+            self.connection = MySQLdb.connect(host=dsn.host, user=dsn.user, passwd=dsn.password, port=dsn.port)
         except MySQLdb.OperationalError as e:
             raise MySQLConnectError(e)
 

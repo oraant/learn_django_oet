@@ -26,7 +26,7 @@ class OracleTargetAdmin(admin.ModelAdmin):
             }
         ), (
             'Connection Information', {
-                'fields': ('ip', 'port', 'user', 'password', 'service')
+                'fields': ('host', 'port', 'user', 'password', 'service')
             }
         ), (
             'Relations', {
@@ -50,7 +50,7 @@ class TableSQLAdmin(admin.ModelAdmin):
             }
         ), (
             'Pull SQL in Target Oracle Database', {
-                'description': """
+                'descrhosttion': """
                     1，SQL语句的结尾不要添加分号！
                 """,
                 'fields': ('pull',)

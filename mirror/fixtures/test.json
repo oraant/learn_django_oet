@@ -58,10 +58,9 @@
         "name": "local redis",
         "enable": true,
         "desc": "Redis Server at localhost",
-        "ip": "127.0.0.1",
+        "host": "127.0.0.1",
         "port": 6379,
-        "password": "",
-        "db": 0
+        "password": ""
     }
 },
 {
@@ -71,10 +70,9 @@
         "name": "test redis",
         "enable": true,
         "desc": "just for test",
-        "ip": "192.168.10.102",
+        "host": "192.168.10.102",
         "port": 6379,
-        "password": "",
-        "db": 0
+        "password": ""
     }
 },
 {
@@ -84,7 +82,7 @@
         "name": "local mysql",
         "enable": true,
         "desc": "MySQL Server at localhost.",
-        "ip": "127.0.0.1",
+        "host": "127.0.0.1",
         "port": 3306,
         "user": "django",
         "password": "django",
@@ -98,7 +96,7 @@
         "name": "test mysql",
         "enable": false,
         "desc": "just for test",
-        "ip": "192.168.10.3",
+        "host": "192.168.10.3",
         "port": 3306,
         "user": "root",
         "password": "123456",
@@ -116,14 +114,16 @@
         "rac": false,
         "dbid": "363264677",
         "instance": 1,
-        "ip": "192.168.10.107",
+        "host": "172.16.97.101",
         "port": 1521,
         "user": "system",
         "password": "oracle",
         "service": "db11g",
-        "tables": "Ora11gR2",
-        "mysql": 1,
-        "redis": 1
+        "table_collection": "Ora11gR2",
+        "mysql_server": 1,
+        "mysql_db": "db11g",
+        "redis_server": 1,
+        "redis_db": 0
     }
 },
 {
@@ -137,14 +137,16 @@
         "rac": false,
         "dbid": "1",
         "instance": 1,
-        "ip": "192.168.10.3",
+        "host": "192.168.10.3",
         "port": 1521,
         "user": "cismon",
         "password": "cismon",
         "service": "db11g",
-        "tables": "Ora11gR2",
-        "mysql": 1,
-        "redis": 1
+        "table_collection": "Ora11gR2",
+        "mysql_server": 1,
+        "mysql_db": "test_oracle",
+        "redis_server": 1,
+        "redis_db": 1
     }
 }
 ]

@@ -10,7 +10,7 @@ class RecordTest(TestCase):
 
     def setUp(self):
         self.target = models.OracleTarget.objects.get(name="db11g")
-        self.dsn = self.target.redis
+        self.dsn = self.target.redis_server
         self.db_number = self.target.redis_db
         self.connection = redis.Redis(host=self.dsn.host,
                                       port=self.dsn.port,

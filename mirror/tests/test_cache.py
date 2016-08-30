@@ -4,6 +4,7 @@ import mirror.models as models
 import MySQLdb
 
 # todo : some open should be closed after raise exceptions like asserts
+# todo : abnormal cases
 
 
 class CacheTest(TestCase):
@@ -20,13 +21,13 @@ class CacheTest(TestCase):
             (363264677, 'DB11G', 'READ WRITE', 'NOARCHIVELOG')
         ]
 
-        dsn = self.target.mysql
+        dsn = self.target.mysql_server
         self.dsn = dsn
-        self.connection = MySQLdb.connect(host=dsn.ip, user=dsn.user, passwd=dsn.password, port=dsn.port)
+        self.connection = MySQLdb.connect(host=dsn.host, user=dsn.user, passwd=dsn.password, port=dsn.port)
 
     def test_function(self):
 
-        c = cacher.Cacher(self.target.mysql, self.target.name)
+        c = cacher.Cacher(self.target.mysql_server, self.target.name)
 
         try:
             c.cache(self.tables[0], self.data)

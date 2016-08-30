@@ -103,7 +103,7 @@ class RedisServer(models.Model):
     enable = models.BooleanField(default=True)
     desc = models.CharField(max_length=300)
 
-    ip = models.GenericIPAddressField()
+    host = models.GenericIPAddressField()
     port = models.IntegerField()
     password = models.CharField(max_length=30, blank=True, null=True)
 
@@ -122,7 +122,7 @@ class MySQLServer(models.Model):
     enable = models.BooleanField(default=True)
     desc = models.CharField(max_length=300)
 
-    ip = models.GenericIPAddressField(help_text='Use 127.0.0.1 instead of localhost to enforce port')
+    host = models.GenericIPAddressField(help_text='Use 127.0.0.1 instead of localhost to enforce port')
     port = models.IntegerField(help_text='Will not work if ip is localhost')
     user = models.CharField(max_length=30, help_text="the user need privileges to create or drop databases and tables!")
     password = models.CharField(max_length=30, blank=True, null=True)
@@ -158,7 +158,7 @@ class OracleTarget(models.Model):
     dbid = models.CharField(max_length=30)
     instance = models.IntegerField()
 
-    ip = models.GenericIPAddressField()
+    host = models.GenericIPAddressField()
     port = models.IntegerField()
     user = models.CharField(max_length=30)
     password = models.CharField(max_length=30, blank=True, null=True)
@@ -174,4 +174,4 @@ class OracleTarget(models.Model):
         return self.name
 
     def dns(self):
-        return "%s:%d/%s" % (self.ip, self.port, self.service)
+        return "%s:%d/%s" % (self.host, self.port, self.service)

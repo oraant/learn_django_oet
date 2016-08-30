@@ -5,7 +5,8 @@ import redis
 
 class Recorder:
     """
-    connection ():
+    Attributes:
+        connection (redis.client.Redis): connection to redis server.
     """
 
     def __init__(self, dsn, db_number):
@@ -32,7 +33,7 @@ class Recorder:
 
         # get connection
         try:
-            self.conn = redis.Redis(host=dsn.host, port=dsn.port, password=dsn.password, db=db_number)
+            self.connection = redis.Redis(host=dsn.host, port=dsn.port, password=dsn.password, db=db_number)
         except (redis.ResponseError, redis.AuthenticationError) as e:
             raise RedisConnectError(e)
 
@@ -48,14 +49,14 @@ class Recorder:
             seconds (int): the period seconds when pull tables.
 
         Raises:
-            RedisConnectError: can't connect to server of record failed.
+            RedisConnectError: can't connect to server or record failed.
             RedisOperationError: set value failed.
         """
 
-        expired = seconds * 1.5
+        expired = int(seconds * 1.5)
 
         try:
-            result = self.conn.set(name, True, expired)
+            result = self.connection.set(name, True, expired)
         except (redis.ResponseError, redis.Connection) as e:
             raise RedisConnectError(e)
 
