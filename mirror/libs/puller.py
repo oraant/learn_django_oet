@@ -46,9 +46,9 @@ class Puller(object):
         try:
             self.connection.close()
         except cx_Oracle.InterfaceError as e:
-            msg = "Puller for %s has been closed with nothing opening.Msg is %s" % (self.dsn.name, e)
+            msg = "Puller to %s has been closed with nothing opening.Msg is %s" % (self.dsn.name, e)
         else:
-            msg = "Puller for %s has been closed." % self.dsn.name
+            msg = "Puller to %s has been closed." % self.dsn.name
 
         return msg
 

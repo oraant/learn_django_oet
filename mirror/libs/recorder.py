@@ -1,5 +1,4 @@
 from mirror.libs.exceptions import NotEnableError, RedisConnectError, RedisOperationError
-import time
 import redis
 
 
@@ -62,3 +61,6 @@ class Recorder:
 
         if not result:
             raise RedisOperationError("Set value into Redis failed. DB=%s, Key=%s." % (self.db_number, name))
+
+    def close(self):
+        return "Recorder to %s has been closed." % self.dsn.name

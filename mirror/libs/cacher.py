@@ -19,7 +19,7 @@ class Cacher:
 
         Args:
             dsn (mirror.models.MySQLServer): MySQL Server connect information.
-            db_name (str): database name in the MySQL server to create cache tables.
+            db_name (unicode): database name in the MySQL server to create cache tables.
 
         Raises:
             NotEnableError: The dsn is configured as not enable.
@@ -114,8 +114,8 @@ class Cacher:
         try:
             self.connection.close()
         except MySQLdb.ProgrammingError as e:
-            msg = "Cacher for %s has been closed with nothing opening.Msg is %s" % (self.dsn.name, e)
+            msg = "Cacher to %s has been closed with nothing opening.Msg is %s" % (self.dsn.name, e)
         else:
-            msg = "Cacher for %s has been closed." % self.dsn.name
+            msg = "Cacher to %s has been closed." % self.dsn.name
 
         return msg
