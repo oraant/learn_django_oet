@@ -1,47 +1,63 @@
+from mirror.libs.exceptions import NotEnableError, RedisConnectError, RedisOperationError
 import time
-
 import redis
 
-from mirror.models import GlobalConfigs
-
-
-# verify exceptions
-class VerifyException(Exception):
-    def __init__(self,value):self.value=value
-    def __str__(self):return repr(self.value)
-class ConfigGetFailed(VerifyException): pass
-class RedisSaveError(VerifyException): pass
-class RedisReadError(VerifyException): pass
 
 class Recorder:
+    """
+    connection ():
+    """
 
-    def __init__(self):
-        self._connect()
+    def __init__(self, dsn, db_number):
+        """
+        Connect to Redis Server.
 
-    def _connect(self):
+        Args:
+            dsn (mirror.models.RedisServer): Redis Server connect information.
+            db_number (long): The id of target oracle database.
+
+        Raises:
+            NotEnableError:  The dsn is configured as not enable.
+            RedisConnectError: Can't connect to Redis Server.
+        """
+
+        # make sure dsn is enabled
+        if dsn.enable:
+            self.dsn = dsn
+        else:
+            raise NotEnableError("Redis is not enabled.")
+
+        # get redis server
+        self.db_number = db_number
+
+        # get connection
         try:
-            host=GlobalConfigs.objects.get(name="redis_host").value
-            port=GlobalConfigs.objects.get(name="redis_port").value
-            db=GlobalConfigs.objects.get(name="redis_db").value
-            password=GlobalConfigs.objects.get(name="redis_password").value
-        except Exception,e:
-            raise ConfigGetFailed("can't get configs,error is :\n%s\n%s" % (Exception.__class__,e))
-        self.conn = redis.Redis(host=host,port=port,password=password,db=db)
+            self.conn = redis.Redis(host=dsn.host, port=dsn.port, password=dsn.password, db=db_number)
+        except (redis.ResponseError, redis.AuthenticationError) as e:
+            raise RedisConnectError(e)
 
-    def record(self,name):
-        'record with timestamp for the name in redis'
+    def record(self, name, seconds):
+        """
+        Record with True value for every table with a expired time.
+
+        Notes:
+            The expired time is 1.5 times of the period seconds.
+
+        Args:
+            name (str): the table name you want to record
+            seconds (int): the period seconds when pull tables.
+
+        Raises:
+            RedisConnectError: can't connect to server of record failed.
+            RedisOperationError: set value failed.
+        """
+
+        expired = seconds * 1.5
+
         try:
-            self.conn.set(name,time.time())
-        except Exception,e:
-            raise RedisSaveError("error when record timestamp for %s : %s" % (name,e))
+            result = self.conn.set(name, True, expired)
+        except (redis.ResponseError, redis.Connection) as e:
+            raise RedisConnectError(e)
 
-    def verify(self,name,gap):
-        try:
-            #exists = self.conn.exists(name)
-            oldtime=float(self.conn.get(name))
-        except Exception,e:
-            raise RedisReadError("error when compare timestamp for %s : %s" % (name,e))
-
-        if time.time()-oldtime > gap:
-            return False
-        return True
+        if not result:
+            raise RedisOperationError("Set value into Redis failed. DB=%s, Key=%s." % (self.db_number, name))
