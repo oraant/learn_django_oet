@@ -12,14 +12,14 @@ class Cacher:
         connection (MySQLdb.connections.Connection): connection to MySQL server.
     """
 
-    def __init__(self, dsn, target_name):
+    def __init__(self, dsn, db_name):
 
         """
         Connect to MySQL server and generate a database to create temporary tables.
 
         Args:
             dsn (mirror.models.MySQLServer): MySQL Server connect information.
-            target_name (str): database name in the MySQL server to create cache tables.
+            db_name (str): database name in the MySQL server to create cache tables.
 
         Raises:
             NotEnableError: The dsn is configured as not enable.
@@ -43,7 +43,7 @@ class Cacher:
 
         # format the database name, then create and connect to it.
         cursor = self.connection.cursor()
-        self.db = dsn.prefix + target_name
+        self.db = dsn.prefix + db_name
         sql = "CREATE DATABASE IF NOT EXISTS %s DEFAULT CHARACTER SET utf8" % self.db
 
         try:
