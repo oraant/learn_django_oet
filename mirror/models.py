@@ -106,7 +106,6 @@ class RedisServer(models.Model):
     ip = models.GenericIPAddressField()
     port = models.IntegerField()
     password = models.CharField(max_length=30, blank=True, null=True)
-    db = models.SmallIntegerField()
 
     def __unicode__(self):
         return self.name
@@ -141,9 +140,13 @@ class OracleTarget(models.Model):
         verbose_name = "Oracle Target"
         verbose_name_plural = "Oracle Targets"
 
+    # validators
+
+    special_sign = RegexValidator(regex=r' ', inverse_match=True, message="Use '_' instead of ' '")
+
     # choices
     table_sql_list = [(x.__name__, x.subclass_name()) for x in TableCollections.__subclasses__()]
-    TableSQLChoices = tuple(table_sql_list)
+    CollectionChoices = tuple(table_sql_list)
 
     # fields
     name = models.CharField(max_length=30, unique=True)
@@ -161,9 +164,11 @@ class OracleTarget(models.Model):
     password = models.CharField(max_length=30, blank=True, null=True)
     service = models.CharField(max_length=30)
 
-    tables = models.CharField(max_length=30, choices=TableSQLChoices)
-    mysql = models.ForeignKey(MySQLServer)
-    redis = models.ForeignKey(RedisServer)
+    table_collection = models.CharField(max_length=30, choices=CollectionChoices)
+    mysql_server = models.ForeignKey(MySQLServer)
+    mysql_db = models.CharField(max_length=50, unique=True, validators=[special_sign])
+    redis_server = models.ForeignKey(RedisServer)
+    redis_db = models.IntegerField(unique=True)
 
     def __unicode__(self):
         return self.name

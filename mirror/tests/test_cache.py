@@ -13,7 +13,7 @@ class CacheTest(TestCase):
     def setUp(self):
 
         self.target = models.OracleTarget.objects.get(name="db11g")
-        self.table_collections = getattr(models, self.target.tables)
+        self.table_collections = getattr(models, self.target.table_collection)
         self.tables = self.table_collections.objects.all()
         self.data = [
             (363264677, 'DB11G', 'READ WRITE', 'NOARCHIVELOG'),

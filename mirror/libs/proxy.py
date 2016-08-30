@@ -2,6 +2,7 @@ from sys import exit
 from importlib import import_module
 from mirror.libs import puller, cacher, recorder
 from mirror.libs import exceptions as exc
+import mirror.models as models
 from apscheduler.schedulers.blocking import BlockingScheduler as Scheduler
 
 
@@ -29,14 +30,15 @@ class Proxy(object):
         # init instance parameters
         self.target = target
         self.logger = logger
-        self.tables = import_module("mirror.models.%s" % target.tables)  # todo: models * should change to getattr
+        self.table_collections = getattr(models, self.target.table_collection)
+
         self.scheduler = Scheduler()
 
         # get workers if they are all enabled and connectable
         try:
             self.puller = puller.Puller(self.target)
-            self.cacher = cacher.Cacher(self.target.mysql, self.target.name)
-            self.recorder = recorder.Verify(self.target.redis)
+            self.cacher = cacher.Cacher(self.target.mysql, self.target.mysql_db)
+            self.recorder = recorder.Verify(self.target.redis, self.target.redis_db)
 
         except exc.NotEnableError as e:
 
@@ -65,7 +67,7 @@ class Proxy(object):
         """
 
         # add jobs
-        for table in self.tables:
+        for table in self.table_collections:
             name = "%s.%s" % (self.target.name, table.name)
             seconds = table.period.seconds
 
@@ -93,4 +95,4 @@ class Proxy(object):
 
         data = self.puller.pull(table)
         self.cacher.cache(table, data)
-        self.recorder.record(table.name, table.period)
+        self.recorder.record(table.name, table.period.seconds)

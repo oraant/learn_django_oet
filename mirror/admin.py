@@ -3,12 +3,37 @@ from django.contrib import admin
 from mirror.models import *
 
 
-@admin.register(GlobalConfig, RedisServer, MySQLServer, OracleTarget)
+@admin.register(GlobalConfig, RedisServer, MySQLServer)
 class BasicAdmin(admin.ModelAdmin):
 
     """Admin for Models who want's to display simple list."""
 
     list_display = ('id', 'name', 'enable', 'desc')
+
+@admin.register(OracleTarget)
+class OracleTargetAdmin(admin.ModelAdmin):
+
+    list_display = ('id', 'name', 'enable', 'desc')
+
+    fieldsets = (
+        (
+            'Basic', {
+                'fields': ('name', 'enable', 'desc')
+            }
+        ), (
+            'Verify Check', {
+                'fields': ('version', 'rac', 'dbid', 'instance')
+            }
+        ), (
+            'Connection Information', {
+                'fields': ('ip', 'port', 'user', 'password', 'service')
+            }
+        ), (
+            'Relations', {
+                'fields': ('table_collection', 'mysql_server', 'mysql_db', 'redis_server', 'redis_db')
+            }
+        )
+    )
 
 
 @admin.register(Ora11gR2)
@@ -18,9 +43,9 @@ class TableSQLAdmin(admin.ModelAdmin):
 
     list_display = ('id', 'name', 'enable', 'desc', 'period')
 
-    fieldsets = (  # todo: field drop must include "if exists" statement.
+    fieldsets = (
         (
-            None,{
+            'Basic', {
                 'fields': ('name', 'enable', 'desc', 'period')
             }
         ), (
