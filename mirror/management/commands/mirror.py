@@ -12,6 +12,8 @@ import multiprocessing as multi
 import os,sys,time
 import logging,warnings
 
+# complete this with daemon and socket server.
+
 class Command(BaseCommand):
     help = 'Start Pull datas from target oracle instances.'
 

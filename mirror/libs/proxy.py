@@ -1,12 +1,18 @@
-from sys import exit
-from importlib import import_module
-from mirror.libs import puller, cacher, recorder
+from common.libs.process_manager import ProcessManager
+from mirror.libs.puller import Puller
+from mirror.libs.cacher import Cacher
+from mirror.libs.recorder import Recorder
 from mirror.libs import exceptions as exc
 import mirror.models as models
 from apscheduler.schedulers.blocking import BlockingScheduler as Scheduler
 
 
-class Proxy(object):
+# todo : concurrent process config
+# todo : sock file path
+# todo : how long to wait if there are some error.
+
+
+class Proxy(ProcessManager):
     """
     Proxy to handle the main mirror job for a oracle database.
 
@@ -38,16 +44,21 @@ class Proxy(object):
         # init instance parameters
         self.target = target
         self.logger = logger
+
+        # init parent things.
+        ProcessManager.__init__(self)
+
+    def _prepare(self):
+        """Prepare workers, table_collection, and scheduler."""
+
         self.table_collection = getattr(models, self.target.table_collection)
         self.scheduler = Scheduler()
 
-    def _get_workers(self):
-        """Get workers if they are all enabled and connectable"""
-
+        # Get workers if they are all enabled and connectable
         try:
-            self.cacher = cacher.Cacher(self.target.mysql, self.target.mysql_db)
-            self.recorder = recorder.Recorder(self.target.redis, self.target.redis_db)
-            self.puller = puller.Puller(self.target)  # if mysql and redis is ok, we connect to them.
+            self.cacher = Cacher(self.target.mysql_server, self.target.mysql_db)
+            self.recorder = Recorder(self.target.redis_server, self.target.redis_db)
+            self.puller = Puller(self.target)  # if mysql and redis is ok, we connect to them.
         except exc.NotEnableError as e:
             self.logger.error("[%s] Worker Not Enabled. Error: %s" % (self.target.name, e))
             self._close_workers()
@@ -67,7 +78,7 @@ class Proxy(object):
         msg = self.recorder.close()
         self.logger.info(msg)
 
-    def _run_schedule(self):
+    def _schedule(self):
         """
         Generate jobs for every target table, and run it periodically under table.period
         """
@@ -77,7 +88,8 @@ class Proxy(object):
             name = "%s.%s" % (self.target.name, table.name)
             seconds = table.period.seconds
 
-            self.scheduler.add_job(self._job_for_table, 'interval', args=(table,), name=name, seconds=seconds)
+            # todo : next_run_time should be now for jobs.
+            self.scheduler.add_job(self._job, 'interval', args=(table,), name=name, seconds=seconds)
             self.logger.info("add job for %s, interval seconds is %s." % (name, seconds))
 
         # run jobs
@@ -85,9 +97,10 @@ class Proxy(object):
             self.scheduler.start()
         except Exception as e:
             self.logger.error(e)
-        finally:
+            self.scheduler.shutdown()
 
-    def _job_for_table(self, table):
+
+    def _job(self, table):
         """
         A job running under a cron scheduler.
         Pull and cache data from target table into mysql server,and record status into redis server.
@@ -100,12 +113,12 @@ class Proxy(object):
         self.cacher.cache(table, data)
         self.recorder.record(table.name, table.period.seconds)
 
+    # overwrite father's method
 
-    def start(self):
-        self._get_workers()
+    def _run(self):
+        self._prepare()
         self._schedule()
 
-    def stop(self):
+    def _terminate(self):
         self._close_workers()
-
-    def restart(self):
+        self.scheduler.shutdown()
