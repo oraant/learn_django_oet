@@ -1,7 +1,7 @@
 # coding:utf-8
 from django.db import models
 from django.core.validators import RegexValidator
-
+from datetime import timedelta
 
 # configs for this model.
 
@@ -27,7 +27,18 @@ class GlobalConfig(models.Model):
     desc = models.CharField(max_length=300)
 
     run = models.BooleanField(default=True, help_text="Do you want to start or stop this model at web level.")
-    log_level = models.CharField(max_length=50, choices=LOG_LEVEL)
+
+    log_file = models.CharField(max_length=100, default="/var/log/oet/mirror.log")
+    log_level = models.CharField(max_length=10, default="WARNING", choices=LOG_LEVEL)
+
+    sock_port = models.IntegerField(default=15521, help_text="Which port to bind the socket server in Mirror.")
+    sock_link = models.IntegerField(default=1, help_text="how many connection at the same time.Don't change this.")
+
+    processes = models.IntegerField(default=4, help_text="Max number of processes.")
+    reborn = models.DurationField(
+        default=timedelta(0,7200),
+        help_text="When can't connect with server, how many seconds to wait to retry. Eg: 0:01:10 for 70 seconds."
+    )
 
     def __unicode__(self):
         return self.name

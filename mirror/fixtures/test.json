@@ -7,7 +7,12 @@
         "enable": true,
         "desc": "default settings",
         "run": true,
-        "log_level": "30"
+        "log_file": "/var/log/oet/mirror.log",
+        "log_level": "30",
+        "sock_port": 15521,
+        "sock_link": 1,
+        "processes": 4,
+        "reborn": "02:00:00"
     }
 },
 {
@@ -18,7 +23,12 @@
         "enable": false,
         "desc": "just for test",
         "run": true,
-        "log_level": "0"
+        "log_file": "/var/log/oet/mirror.log",
+        "log_level": "0",
+        "sock_port": 15521,
+        "sock_link": 1,
+        "processes": 4,
+        "reborn": "02:00:00"
     }
 },
 {
@@ -114,7 +124,7 @@
         "rac": false,
         "dbid": "363264677",
         "instance": 1,
-        "host": "172.16.97.101",
+        "host": "192.168.10.107",
         "port": 1521,
         "user": "system",
         "password": "oracle",
