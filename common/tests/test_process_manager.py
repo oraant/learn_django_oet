@@ -1,9 +1,11 @@
 from django.test import TestCase
 from common.libs.process_manager import ProcessManager
 from time import sleep
+from threading import Thread
 
 # todo : some open should be closed after raise exceptions like asserts
 # todo : abnormal cases
+
 
 class MyProcessManager(ProcessManager):
 
@@ -11,13 +13,21 @@ class MyProcessManager(ProcessManager):
         self.run = True
         ProcessManager.__init__(self)
 
+    def _start(self):
+        self.run = True
+        Thread(target=self._run).start()
+        print '>>>'
+
     def _run(self):
         while self.run:
-            sleep(1)
-            print "I'm running"
+            sleep(2)
+            print "-> -> ->"
 
-    def _terminate(self):
+    def _stop(self):
         self.run = False
+        sleep(2.2)
+        print '<<<'
+
 
 # from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
 # from apscheduler.events import EVENT_JOB_ERROR
@@ -67,6 +77,7 @@ class MyProcessManager(ProcessManager):
 #     def _terminate(self):
 #         self.scheduler.shutdown(wait=False)
 
+
 class ProcessManagerTest(TestCase):
 
     def setUp(self):
@@ -75,7 +86,109 @@ class ProcessManagerTest(TestCase):
 
     def test_function(self):
 
-        self.mypm
+        # open
+        print '------ open'
+        result = self.mypm.status()
+        print result
+        self.assertEqual(result, "Status INITIAL is not in ['OPENED', 'CLOSED'].")
 
-    def tearDown(self):
-        self.connection.close()
+        result = self.mypm.open()
+        print result
+        self.assertEqual(result, "child process generated")
+
+        sleep(1)
+
+        # start
+        print '------ start'
+        result = self.mypm.start()
+        print result
+        self.assertEqual(result, "Trying to start child process's job")
+
+        sleep(1)
+
+        result = self.mypm.status()
+        print result
+        self.assertEqual(result, "child process's job status is RUNNING")
+
+        sleep(1)
+
+        # restart
+        print '------ restart'
+        result = self.mypm.restart()
+        print result
+        self.assertEqual(result, "Trying to restart Child process's job.")
+
+        sleep(1)
+
+        result = self.mypm.status()
+        print result
+        self.assertEqual(result, "child process's job status is STOPPING")
+
+        sleep(3)
+
+        result = self.mypm.status()
+        print result
+        self.assertEqual(result, "child process's job status is RUNNING")
+        sleep(1)
+
+        # reborn
+        print '------ reborn'
+        result = self.mypm.reborn(3)
+        print result
+        self.assertEqual(result, "Trying to reborn Child process's job.")
+
+        sleep(1)
+
+        result = self.mypm.status()
+        print result
+        self.assertEqual(result, "child process's job status is STOPPING")
+
+        sleep(3)
+
+        result = self.mypm.status()
+        print result
+        self.assertEqual(result, "child process's job status is SUSPENDED")
+
+        sleep(5)
+
+        result = self.mypm.status()
+        print result
+        self.assertEqual(result, "child process's job status is RUNNING")
+
+        sleep(1)
+
+        # stop
+        print '------ stop'
+        result = self.mypm.stop()
+        print result
+        self.assertEqual(result, "Trying to stop Child process's job.")
+
+        sleep(1)
+
+        result = self.mypm.status()
+        print result
+        self.assertEqual(result, "child process's job status is STOPPING")
+
+        sleep(2)
+
+        result = self.mypm.status()
+        print result
+        self.assertEqual(result, "child process's job status is STOPPED")
+
+        # close
+        print '------ close'
+        result = self.mypm.close()
+        print result
+        self.assertEqual(result, "child process is closed.")
+
+        sleep(1)
+
+        result = self.mypm.status()
+        print result
+        self.assertEqual(result, "can not find child.")
+
+        sleep(1)
+
+        result = self.mypm.open()
+        print result
+        self.assertEqual(result, "Status CLOSED is not in ['INITIAL'].")
