@@ -48,7 +48,7 @@ class Proxy(ProcessManager):
         # init parent things.
         ProcessManager.__init__(self)
 
-    def _prepare(self):
+    def __prepare(self):
         """Prepare workers, table_collection, and scheduler."""
 
         self.table_collection = getattr(models, self.target.table_collection)
@@ -61,12 +61,12 @@ class Proxy(ProcessManager):
             self.puller = Puller(self.target)  # if mysql and redis is ok, we connect to them.
         except exc.NotEnableError as e:
             self.logger.error("[%s] Worker Not Enabled. Error: %s" % (self.target.name, e))
-            self._close_workers()
+            self.__close_workers()
         except (exc.ORACLEConnectError, exc.MySQLConnectError, exc.RedisConnectError) as e:
             self.logger.error("[%s] Worker Can't connect. Error: %s" % (self.target.name, e))
-            self._close_workers()
+            self.__close_workers()
 
-    def _close_workers(self):
+    def __close_workers(self):
         """Close workers and record logs of the information."""
 
         msg = self.puller.close()
@@ -78,7 +78,7 @@ class Proxy(ProcessManager):
         msg = self.recorder.close()
         self.logger.info(msg)
 
-    def _schedule(self):
+    def __schedule(self):
         """
         Generate jobs for every target table, and run it periodically under table.period
         """
@@ -89,7 +89,7 @@ class Proxy(ProcessManager):
             seconds = table.period.seconds
 
             # todo : next_run_time should be now for jobs.
-            self.scheduler.add_job(self._job, 'interval', args=(table,), name=name, seconds=seconds)
+            self.scheduler.add_job(self.__job, 'interval', args=(table,), name=name, seconds=seconds)
             self.logger.info("add job for %s, interval seconds is %s." % (name, seconds))
 
         # run jobs
@@ -99,8 +99,7 @@ class Proxy(ProcessManager):
             self.logger.error(e)
             self.scheduler.shutdown()
 
-
-    def _job(self, table):
+    def __job(self, table):
         """
         A job running under a cron scheduler.
         Pull and cache data from target table into mysql server,and record status into redis server.
@@ -113,12 +112,22 @@ class Proxy(ProcessManager):
         self.cacher.cache(table, data)
         self.recorder.record(table.name, table.period.seconds)
 
+    def __listener(self, event):
+
+        if not event.exception:
+            return
+
+        try:
+            raise event.exception
+        except Exception as e:
+            pass
+
     # overwrite father's method
 
-    def _run(self):
-        self._prepare()
-        self._schedule()
+    def _start(self):
+        self.__prepare()
+        self.__schedule()
 
-    def _terminate(self):
-        self._close_workers()
+    def _stop(self):
         self.scheduler.shutdown()
+        self.__close_workers()

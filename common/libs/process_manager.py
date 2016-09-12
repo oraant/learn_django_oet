@@ -74,7 +74,7 @@ class ProcessManager:  # change to protect function to avoid children class over
 
     # method for father process.
 
-    @__premise([INITIAL])
+    @__premise([INITIAL])  # todo : should be open when closed. And add unit test.
     def open(self):
         self.__status = self.OPENED
         self.__process.start()
