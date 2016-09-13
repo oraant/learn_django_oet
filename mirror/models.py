@@ -31,8 +31,11 @@ class GlobalConfig(models.Model):
     log_file = models.CharField(max_length=100, default="/var/log/oet/mirror.log")
     log_level = models.CharField(max_length=10, default="WARNING", choices=LOG_LEVEL)
 
+    sock_addr = models.GenericIPAddressField(
+        default="127.0.0.1",
+        help_text="listening Address."
+    )
     sock_port = models.IntegerField(default=15521, help_text="Which port to bind the socket server in Mirror.")
-    sock_link = models.IntegerField(default=1, help_text="how many connection at the same time.Don't change this.")
 
     processes = models.IntegerField(default=4, help_text="Max number of processes.")
     reborn = models.DurationField(
