@@ -3,12 +3,12 @@ from common.libs.process_manager import ProcessManager
 from time import sleep
 from threading import Thread
 
+
 # todo : some open should be closed after raise exceptions like asserts
 # todo : abnormal cases
 
 
 class MyProcessManager(ProcessManager):
-
     def __init__(self):
         self.run = True
         ProcessManager.__init__(self)
@@ -79,18 +79,16 @@ class MyProcessManager(ProcessManager):
 
 
 class ProcessManagerTest(TestCase):
-
     def setUp(self):
-
         self.mypm = MyProcessManager()
 
     def test_function(self):
-
         # open
         print '------ open'
         result = self.mypm.status()
         print result
-        self.assertEqual(result, "Status INITIAL is not in ['OPENED', 'CLOSED'].")
+        self.assertEqual(result,
+                         "Status PARENT_PROCESS_INITIAL is not in ['CHILD_PROCESS_OPENED', 'CHILD_PROCESS_CLOSED'].")
 
         result = self.mypm.open()
         print result
@@ -108,7 +106,7 @@ class ProcessManagerTest(TestCase):
 
         result = self.mypm.status()
         print result
-        self.assertEqual(result, "child process's job status is RUNNING")
+        self.assertEqual(result, "child process's job status is CHILD_JOB_RUNNING")
 
         sleep(1)
 
@@ -122,13 +120,13 @@ class ProcessManagerTest(TestCase):
 
         result = self.mypm.status()
         print result
-        self.assertEqual(result, "child process's job status is STOPPING")
+        self.assertEqual(result, "child process's job status is CHILD_JOB_STOPPING")
 
         sleep(3)
 
         result = self.mypm.status()
         print result
-        self.assertEqual(result, "child process's job status is RUNNING")
+        self.assertEqual(result, "child process's job status is CHILD_JOB_RUNNING")
         sleep(1)
 
         # reborn
@@ -141,19 +139,19 @@ class ProcessManagerTest(TestCase):
 
         result = self.mypm.status()
         print result
-        self.assertEqual(result, "child process's job status is STOPPING")
+        self.assertEqual(result, "child process's job status is CHILD_JOB_STOPPING")
 
         sleep(3)
 
         result = self.mypm.status()
         print result
-        self.assertEqual(result, "child process's job status is SUSPENDED")
+        self.assertEqual(result, "child process's job status is CHILD_JOB_SUSPENDED")
 
         sleep(5)
 
         result = self.mypm.status()
         print result
-        self.assertEqual(result, "child process's job status is RUNNING")
+        self.assertEqual(result, "child process's job status is CHILD_JOB_RUNNING")
 
         sleep(1)
 
@@ -167,13 +165,13 @@ class ProcessManagerTest(TestCase):
 
         result = self.mypm.status()
         print result
-        self.assertEqual(result, "child process's job status is STOPPING")
+        self.assertEqual(result, "child process's job status is CHILD_JOB_STOPPING")
 
         sleep(2)
 
         result = self.mypm.status()
         print result
-        self.assertEqual(result, "child process's job status is STOPPED")
+        self.assertEqual(result, "child process's job status is CHILD_JOB_STOPPED")
 
         # close
         print '------ close'
@@ -191,4 +189,4 @@ class ProcessManagerTest(TestCase):
 
         result = self.mypm.open()
         print result
-        self.assertEqual(result, "Status CLOSED is not in ['INITIAL'].")
+        self.assertEqual(result, "Status CHILD_PROCESS_CLOSED is not in ['PARENT_PROCESS_INITIAL'].")
