@@ -2,49 +2,57 @@
 
 import daemon
 import socket
+import functools
 
 
 class SocketServer:
 
-    def __init__(self, sock_host, sock_port, handler):
+    def __init__(self, sock_host, sock_port, handler=None):
         self.sock_host = sock_host
         self.sock_port = sock_port
         self.handler = handler
 
         self.listen = True
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+        self.STATUS_SOCKET_SERVER, self.STOP_SOCKET_SERVER = 'STATUS_SOCKET_SERVER', 'STOP_SOCKET_SERVER'
+        self.SERVER_IS_RUNNING, self.STOPPING_SERVER = 'SERVER_IS_RUNNING', 'STOPPING_SERVER'
 
     def start_server(self):
-        self.socket.bind((self.sock_host, self.sock_port))
-        self.socket.listen(1)
+        print self.sock_host, self.sock_port
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.bind((self.sock_host, self.sock_port))
+        server_socket.listen(1)
+
+        def status():
+            connection.send(self.SERVER_IS_RUNNING)
+
+        def stop():
+            connection.send(self.STOPPING_SERVER)
+            connection.close()
+            self.listen = False
+
+        actions = {
+            self.STATUS_SOCKET_SERVER: status,
+            self.STOP_SOCKET_SERVER: stop
+        }
 
         while self.listen:
-            connection, address = self.socket.accept()
-            req = connection.recv(1024)
-
-            # 处理关闭请求
-            if req == 'stop':
-                res = 'Stoping Server'
-                connection.send(res)
-                connection.close()
-                os.unlink(self.sock_file)
-                exit(0)
-            # 处理状态请求
-            elif req == 'status':
-                res = 'Server is running'
-                connection.send(res)
-            # 处理其他请求
-            elif req != '':
-                res = req
-                connection.send(res)
-
+            connection, address = server_socket.accept()
+            request = connection.recv(1024)
+            print '===', request
+            if request in actions.keys():
+                actions.get(request)()
+            elif self.handler:
+                response = self.handler.handle(request)
+                connection.send(response)
+            else:
+                connection.send("Server can't handle the request : %s" % request)
 
     def send_request(self, request):
-
-         = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            client_socket.connect((self.sock_address, self.sock_port))
+            client_socket.connect((self.sock_host, self.sock_port))
             client_socket.send(request)
             response = client_socket.recv(1024)
         except socket.error as e:
@@ -57,21 +65,15 @@ class SocketServer:
 
         return response
 
-if __name__ == '__main__':
+    def status_server(self):
+        return self.send_request(self.STATUS_SOCKET_SERVER)
 
-    flush('---')
-    output('waiting')
-    ss = SocketServer()
+    def stop_server(self):
+        return self.send_request(self.STOP_SOCKET_SERVER)
 
-    try:
-        msg = sys.argv[1]
-    except Exception as e:
-        msg = 'start'
-
-    if msg == 'start':
-        with daemon.DaemonContext():
-            ss.create_server()
-            ss.handle_msg()
-            output(e)
-    else:
-        print ss.send_msg2(msg)
+    def test_server(self):
+        response = self.send_request(self.STATUS_SOCKET_SERVER)
+        if response == self.SERVER_IS_RUNNING:
+            return True
+        else:
+            return False

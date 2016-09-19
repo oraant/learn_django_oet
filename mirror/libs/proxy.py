@@ -112,7 +112,7 @@ class Proxy(ProcessManager):
         self.cacher.cache(table, data)
         self.recorder.record(table.name, table.period.seconds)
 
-    def __listener(self, event):
+    def __listener(self, event):  # todo : complete this.
 
         if not event.exception:
             return
@@ -131,3 +131,6 @@ class Proxy(ProcessManager):
     def _stop(self):
         self.scheduler.shutdown()
         self.__close_workers()
+
+    def _run(self):
+        pass
