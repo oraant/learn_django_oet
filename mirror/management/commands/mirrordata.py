@@ -24,13 +24,14 @@ class Command(BaseCommand):
         # actions for arg parser.
         self.socket_server_actions = ['startup', 'shutdown', 'check']
         self.proxy_process_actions = ['open', 'close']
-        self.proxy_job_actions = ['start', 'stop', 'status', 'restart', 'reborn']
+        self.proxy_job_actions = ['start', 'stop', 'check', 'restart', 'reborn']
 
         # target names can be choice.
         self.targets = [x.name for x in OracleTarget.objects.all()]
 
     def add_arguments(self, parser):
         """
+        Add custom arguments for this command.
         Args:
             parser (CommandParser): parser arg from father function.
         """
@@ -40,11 +41,11 @@ class Command(BaseCommand):
         cmd = self
 
         class SubParser(CommandParser):
-
+            """Use to avoid the error when using sub parser in django's add_arguments method."""
             def __init__(self, **kwargs):
                 super(SubParser, self).__init__(cmd, **kwargs)
 
-        # do the main job
+        # add custom sub commands.
 
         subparsers = parser.add_subparsers(
             title="sub commands",
@@ -53,6 +54,8 @@ class Command(BaseCommand):
             help='Sub commands you can use.'
         )
 
+        # actions to start or stop socket server.
+
         server = subparsers.add_parser('server', help="Server Commands")
         server.add_argument(
             'action',
@@ -60,6 +63,8 @@ class Command(BaseCommand):
             choices=self.socket_server_actions,
             help='Actions is: <%s>' % '|'.join(self.socket_server_actions),
         )
+
+        # actions of targets when calling server is running.
 
         proxy = subparsers.add_parser('proxy', help="Proxy Commands")
         proxy.add_argument(
@@ -80,7 +85,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """
-        send user args to server, or start server.
+        call different handle for different sub command.
         """
 
         handler_choice = {
@@ -95,23 +100,23 @@ class Command(BaseCommand):
         action = options['action']
 
         def startup():
-            if not self.server.test_server():
+            if not self.server.test():
                 with daemon.DaemonContext():
-                    self.server.start_server()
-                self.server.start_server()
+                    self.server.start()
+                self.server.start()
             else:
-                msg = self.server.status_server()
+                msg = self.server.check()
                 self.stdout.write(msg)
 
         def shutdown():
-            if self.server.test_server():
-                msg = self.server.stop_server()
+            if self.server.test():
+                msg = self.server.stop()
             else:
-                msg = self.server.status_server()
+                msg = self.server.check()
             self.stdout.write(msg)
 
         def check():
-            msg = self.server.status_server()
+            msg = self.server.check()
             self.stdout.write(msg)
 
         functions = [startup, shutdown, check]
@@ -120,7 +125,7 @@ class Command(BaseCommand):
 
     def proxy_handle(self, options):
 
-        if not self.server.test_server():
+        if not self.server.test():
             self.stdout.write('Server is not running, Please start it first.')
             return
 
@@ -131,4 +136,4 @@ class Command(BaseCommand):
             {'action': action, 'targets': targets}
         )
 
-        print self.server.send_request(request)
+        print self.server.request(request)

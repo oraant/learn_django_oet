@@ -55,7 +55,7 @@ class Handler:
             "stop": proxy.stop,
             "restart": proxy.restart,
             "reborn": proxy.reborn,
-            "status": proxy.status,
+            "check": proxy.check,
         }
 
         return operations.get(function)()

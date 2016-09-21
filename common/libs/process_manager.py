@@ -18,7 +18,7 @@ class ProcessManager:  # change to protect function to avoid children class over
 
     # actions and status for child's job
 
-    START_CHILD_JOB, STOP_CHILD_JOB, STATUS_CHILD_JOB = 'START_CHILD_JOB', 'STOP_CHILD_JOB', 'STATUS_CHILD_JOB'
+    START_CHILD_JOB, STOP_CHILD_JOB, CHECK_CHILD_JOB = 'START_CHILD_JOB', 'STOP_CHILD_JOB', 'CHECK_CHILD_JOB'
     RESTART_CHILD_JOB, REBORN_CHILD_JOB = 'RESTART_CHILD_JOB', 'REBORN_CHILD_JOB'
 
     CHILD_JOB_STARTING, CHILD_JOB_RUNNING = 'CHILD_JOB_STARTING', 'CHILD_JOB_RUNNING'
@@ -32,8 +32,6 @@ class ProcessManager:  # change to protect function to avoid children class over
     PARENT_PROCESS_INITIAL = 'PARENT_PROCESS_INITIAL'
     CHILD_PROCESS_OPENED, CHILD_PROCESS_CLOSED = 'CHILD_PROCESS_OPENED', 'CHILD_PROCESS_CLOSED'
 
-    # method for subclass
-
     def __init__(self):
         """
         Init variables for instance.
@@ -44,18 +42,6 @@ class ProcessManager:  # change to protect function to avoid children class over
         self.__suspend_start_timer = None
 
         self.__process = Process(target=self.__listen)
-
-    def _start(self):
-        """Children Class's code here, Make sure job is running and can be stop immediately."""
-        pass
-
-    def _stop(self):
-        """Children Class's code here, Make sure all job done and can be start immediately."""
-        pass
-
-    def _run(self):
-        """Children Class's code here, do the main job."""
-        pass
 
     # decorator for father and child
 
@@ -104,8 +90,8 @@ class ProcessManager:  # change to protect function to avoid children class over
         return self.__parent.recv()
 
     @__premise([CHILD_PROCESS_OPENED, CHILD_PROCESS_CLOSED])
-    def status(self):
-        self.__parent.send({'method': self.STATUS_CHILD_JOB})
+    def check(self):
+        self.__parent.send({'method': self.CHECK_CHILD_JOB})
         if self.__parent.poll(0.1):
             return self.__parent.recv()
         else:
@@ -119,7 +105,7 @@ class ProcessManager:  # change to protect function to avoid children class over
             self.START_CHILD_JOB: self.__start,
             self.STOP_CHILD_JOB: self.__stop,
             self.RESTART_CHILD_JOB: self.__restart,
-            self.STATUS_CHILD_JOB: self.__check,
+            self.CHECK_CHILD_JOB: self.__check,
             self.REBORN_CHILD_JOB: self.__reborn,
             self.CLOSE_CHILD_PROCESS: self.__close,
         }
@@ -228,8 +214,6 @@ class ProcessManager:  # change to protect function to avoid children class over
             str: explain how's it going.
         """
 
-        # todo : create a timer(or wait event thread) at first time, close it at next time.
-
         def _suspend():
             if self.__suspend_start_timer:  # todo : can be removed after test.
                 print "internal error: suspending start, but instance variable is busy."  # todo : a log is better.
@@ -247,7 +231,6 @@ class ProcessManager:  # change to protect function to avoid children class over
             return "Child process's job is not running.Trying to reborn it."
 
         def _reborn():  # block for a while
-
             def _reborn_handler():
                 self.__stop(True)
                 _suspend()
@@ -275,9 +258,23 @@ class ProcessManager:  # change to protect function to avoid children class over
 
     def __check(self):
         """
-
+        Check child process's status
         Returns:
             str: the status of child's process
         """
         msg = "child process's job status is %s" % self.__status
         return msg
+
+    # method for subclass
+
+    def _start(self):
+        """Children Class's code here, Make sure job is running and can be stop immediately."""
+        pass
+
+    def _stop(self):
+        """Children Class's code here, Make sure all job done and can be start immediately."""
+        pass
+
+    def _run(self):
+        """Children Class's code here, do the main job. This is optional."""
+        pass

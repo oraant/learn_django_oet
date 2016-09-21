@@ -39,7 +39,7 @@ class GlobalConfig(models.Model):
 
     processes = models.IntegerField(default=4, help_text="Max number of processes.")
     reborn = models.DurationField(
-        default=timedelta(0,7200),
+        default=timedelta(0, 7200),
         help_text="When can't connect with server, how many seconds to wait to retry. Eg: 0:01:10 for 70 seconds."
     )
 

@@ -3,9 +3,14 @@
   <component name="ChangeListManager">
     <list default="true" id="b4b0e8ff-6138-4ab4-86a9-87af3fa98c9e" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/common/libs/process_manager.py" afterPath="$PROJECT_DIR$/common/libs/process_manager.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/common/libs/socket_server.py" afterPath="$PROJECT_DIR$/common/libs/socket_server.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mirror/libs/proxy.py" afterPath="$PROJECT_DIR$/mirror/libs/proxy.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/common/tests/test_process_manager.py" afterPath="$PROJECT_DIR$/common/tests/test_process_manager.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/common/tests/test_socket_server.py" afterPath="$PROJECT_DIR$/common/tests/test_socket_server.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mirror/admin.py" afterPath="$PROJECT_DIR$/mirror/admin.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mirror/libs/handler.py" afterPath="$PROJECT_DIR$/mirror/libs/handler.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mirror/management/commands/mirrordata.py" afterPath="$PROJECT_DIR$/mirror/management/commands/mirrordata.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mirror/models.py" afterPath="$PROJECT_DIR$/mirror/models.py" />
     </list>
     <ignored path="oet.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -29,10 +34,12 @@
     <SUITE FILE_PATH="coverage/oet$Test__common_tests_test_process_manager_ProcessManagerTest.coverage" NAME="Test: common.tests.test_process_manager.ProcessManagerTest Coverage Results" MODIFIED="1473646794642" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/oet$Test__common_tests_test_process_manager.coverage" NAME="Test: common tests.test_process_manager Coverage Results" MODIFIED="1473646748591" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/oet$Test__mirror_tests_test_puller.coverage" NAME="Test: mirror.tests.test_puller Coverage Results" MODIFIED="1472091051629" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/oet$Test__common_tests_test_socket_server_SocketServerTest___keepdb.coverage" NAME="Test: common.tests.test_socket_server.SocketServerTest --keepdb Coverage Results" MODIFIED="1474449825561" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/oet$Test__mirror_tests_test_pull.coverage" NAME="Test: mirror.tests.test_pull Coverage Results" MODIFIED="1472192643363" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/oet$Test__mirror_tests_test_cache___verbose_3.coverage" NAME="Test: mirror.tests.test_cache --verbose 3 Coverage Results" MODIFIED="1472196106522" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
-    <SUITE FILE_PATH="coverage/oet$Test__common_tests_test_process_manager_ProcessManagerTest___keepdb.coverage" NAME="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb Coverage Results" MODIFIED="1474182605595" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/oet$Test__common_tests_test_process_manager_ProcessManagerTest___keepdb.coverage" NAME="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb Coverage Results" MODIFIED="1474443014122" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/oet$Test__mirror_tests.coverage" NAME="Test: mirror.tests Coverage Results" MODIFIED="1472555141915" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/oet$Test__mirror_libs_test_process_manager.coverage" NAME="Test: mirror.libs.test_process_manager Coverage Results" MODIFIED="1474343038318" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/oet$Test__mirror_tests_test_cache.coverage" NAME="Test: mirror.tests.test_cache Coverage Results" MODIFIED="1472196024059" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
   </component>
   <component name="CreatePatchCommitExecutor">
@@ -54,10 +61,10 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="proxy.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="proxy.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/mirror/libs/proxy.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="368">
+            <state relative-caret-position="1263">
               <caret line="110" column="38" selection-start-line="110" selection-start-column="38" selection-end-line="110" selection-end-column="38" />
               <folding>
                 <element signature="e#0#54#0" expanded="true" />
@@ -69,54 +76,10 @@
       <file leaf-file-name="process_manager.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/common/libs/process_manager.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="120">
-              <caret line="99" column="0" selection-start-line="99" selection-start-column="0" selection-end-line="99" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="mirrordata.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/mirror/management/commands/mirrordata.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="75">
-              <caret line="5" column="39" selection-start-line="5" selection-start-column="39" selection-end-line="5" selection-end-column="39" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="handler.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/mirror/libs/handler.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="750">
-              <caret line="50" column="22" selection-start-line="50" selection-start-column="22" selection-end-line="50" selection-end-column="22" />
+            <state relative-caret-position="60">
+              <caret line="4" column="100" selection-start-line="4" selection-start-column="100" selection-end-line="4" selection-end-column="100" />
               <folding>
-                <element signature="e#0#35#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="socket_server.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/common/libs/socket_server.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="683">
-              <caret line="77" column="13" selection-start-line="77" selection-start-column="13" selection-end-line="77" selection-end-column="13" />
-              <folding>
-                <element signature="e#16#29#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="test_socket_server.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/common/tests/test_socket_server.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="225">
-              <caret line="15" column="8" selection-start-line="15" selection-start-column="8" selection-end-line="15" selection-end-column="8" />
-              <folding>
-                <element signature="e#0#32#0" expanded="true" />
+                <element signature="e#0#41#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -125,8 +88,32 @@
       <file leaf-file-name="test_process_manager.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/common/tests/test_process_manager.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="30">
-              <caret line="5" column="0" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
+            <state relative-caret-position="420">
+              <caret line="103" column="8" selection-start-line="103" selection-start-column="8" selection-end-line="103" selection-end-column="28" />
+              <folding>
+                <element signature="e#0#32#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="socket_server.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/common/libs/socket_server.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-495">
+              <caret line="9" column="20" selection-start-line="9" selection-start-column="20" selection-end-line="9" selection-end-column="20" />
+              <folding>
+                <element signature="e#0#32#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="test_socket_server.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/common/tests/test_socket_server.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-935">
+              <caret line="29" column="71" selection-start-line="29" selection-start-column="71" selection-end-line="29" selection-end-column="71" />
               <folding>
                 <element signature="e#0#32#0" expanded="true" />
               </folding>
@@ -155,21 +142,21 @@
         <option value="$PROJECT_DIR$/mirror/tests/test_recorde.py" />
         <option value="$PROJECT_DIR$/mirror/tests/test_record.py" />
         <option value="$PROJECT_DIR$/mirror/tests/test_cache.py" />
-        <option value="$PROJECT_DIR$/mirror/admin.py" />
         <option value="$PROJECT_DIR$/mirror/libs/puller.py" />
         <option value="$PROJECT_DIR$/mirror/libs/cacher.py" />
         <option value="$PROJECT_DIR$/common/process_manager.py" />
         <option value="$PROJECT_DIR$/mirror/libs/recorder.py" />
         <option value="$PROJECT_DIR$/oet/settings.py" />
         <option value="$PROJECT_DIR$/mirror/management/commands/mirror.py" />
-        <option value="$PROJECT_DIR$/mirror/models.py" />
-        <option value="$PROJECT_DIR$/common/libs/process_manager.py" />
-        <option value="$PROJECT_DIR$/common/tests/test_process_manager.py" />
-        <option value="$PROJECT_DIR$/common/tests/test_socket_server.py" />
-        <option value="$PROJECT_DIR$/common/libs/socket_server.py" />
-        <option value="$PROJECT_DIR$/mirror/management/commands/mirrordata.py" />
         <option value="$PROJECT_DIR$/mirror/libs/proxy.py" />
         <option value="$PROJECT_DIR$/mirror/libs/handler.py" />
+        <option value="$PROJECT_DIR$/common/tests/test_process_manager.py" />
+        <option value="$PROJECT_DIR$/mirror/management/commands/mirrordata.py" />
+        <option value="$PROJECT_DIR$/common/libs/socket_server.py" />
+        <option value="$PROJECT_DIR$/common/libs/process_manager.py" />
+        <option value="$PROJECT_DIR$/mirror/models.py" />
+        <option value="$PROJECT_DIR$/mirror/admin.py" />
+        <option value="$PROJECT_DIR$/common/tests/test_socket_server.py" />
       </list>
     </option>
   </component>
@@ -180,9 +167,9 @@
     <sorting>DEFINITION_ORDER</sorting>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="y" value="24" />
-    <option name="width" value="1366" />
-    <option name="height" value="744" />
+    <option name="y" value="52" />
+    <option name="width" value="1356" />
+    <option name="height" value="686" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
@@ -212,7 +199,88 @@
       <pane id="Scratches" />
       <pane id="Scope" />
       <pane id="ProjectPane">
-        <subPane />
+        <subPane>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="oet" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="oet" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="oet" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="oet" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="oet" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="mirror" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="oet" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="oet" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="common" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="oet" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="oet" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="common" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="tests" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="oet" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="oet" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="common" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="libs" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+        </subPane>
       </pane>
     </panes>
   </component>
@@ -482,8 +550,8 @@
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
-        <env name="DJANGO_SETTINGS_MODULE" value="oet.settings" />
         <env name="PYTHONUNBUFFERED" value="1" />
+        <env name="DJANGO_SETTINGS_MODULE" value="oet.settings" />
       </envs>
       <option name="SDK_HOME" value="/usr/bin/python2.7" />
       <option name="WORKING_DIRECTORY" value="" />
@@ -532,35 +600,35 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.12 at 16h 58m 38s.xml">
+    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.20 at 11h 44m 17s.xml">
       <configuration name="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
     </history-entry>
-    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.12 at 16h 59m 24s.xml">
+    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.20 at 11h 45m 23s.xml">
       <configuration name="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
     </history-entry>
-    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.18 at 14h 38m 34s.xml">
+    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.20 at 11h 46m 00s.xml">
       <configuration name="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
     </history-entry>
-    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.18 at 14h 48m 06s.xml">
+    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.21 at 10h 29m 55s.xml">
       <configuration name="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
     </history-entry>
-    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.18 at 14h 59m 27s.xml">
+    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.21 at 10h 40m 30s.xml">
       <configuration name="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
     </history-entry>
-    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.18 at 15h 02m 24s.xml">
+    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.21 at 10h 46m 51s.xml">
       <configuration name="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
     </history-entry>
-    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.18 at 15h 05m 12s.xml">
+    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.21 at 11h 27m 49s.xml">
       <configuration name="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
     </history-entry>
-    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.18 at 15h 07m 30s.xml">
+    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.21 at 15h 30m 38s.xml">
       <configuration name="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
     </history-entry>
-    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.18 at 15h 09m 30s.xml">
-      <configuration name="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
+    <history-entry file="Test__common_tests_test_socket_server_SocketServerTest_--keepdb - 2016.09.21 at 16h 54m 15s.xml">
+      <configuration name="Test: common.tests.test_socket_server.SocketServerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
     </history-entry>
-    <history-entry file="Test__common_tests_test_process_manager_ProcessManagerTest_--keepdb - 2016.09.18 at 15h 10m 30s.xml">
-      <configuration name="Test: common.tests.test_process_manager.ProcessManagerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
+    <history-entry file="Test__common_tests_test_socket_server_SocketServerTest_--keepdb - 2016.09.21 at 17h 23m 46s.xml">
+      <configuration name="Test: common.tests.test_socket_server.SocketServerTest --keepdb" configurationId="DjangoTestsConfigurationType" />
     </history-entry>
   </component>
   <component name="TodoView">
@@ -573,19 +641,20 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="0" y="24" width="1366" height="744" extended-state="6" />
+    <frame x="0" y="52" width="1356" height="686" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.20972644" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296875" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="manage.py@oet" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.42156863" sideWeight="0.5" order="11" side_tool="false" content_ui="tabs" />
-      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.39869282" sideWeight="0.50303954" order="7" side_tool="true" content_ui="tabs" />
-      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32978722" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3888889" sideWeight="0.506079" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.7890625" sideWeight="0.5" order="8" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.3296875" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.9019608" sideWeight="0.4969605" order="2" side_tool="false" content_ui="tabs" />
-      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.15197569" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.6372549" sideWeight="0.49392098" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32843137" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2113323" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32978722" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.50980395" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
+      <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2575988" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
       <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.615625" sideWeight="0.4969605" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
@@ -594,7 +663,6 @@
       <window_info id="Documentation" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="FLOATING" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" x="492" y="535" width="555" height="193" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32843137" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -616,23 +684,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/mirror/tests/test_pull.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="27" column="0" selection-start-line="27" selection-start-column="0" selection-end-line="27" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mirror/libs/proxy.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="28" column="34" selection-start-line="28" selection-start-column="34" selection-end-line="28" selection-end-column="34" />
-          <folding>
-            <element signature="e#0#54#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/mirror/libs/puller.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="360">
@@ -682,13 +733,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mirror/admin.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="156">
-          <caret line="59" column="34" selection-start-line="59" selection-start-column="34" selection-end-line="59" selection-end-column="34" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/mirror/tests/test_pull.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="225">
@@ -707,13 +751,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="210">
           <caret line="14" column="56" selection-start-line="14" selection-start-column="52" selection-end-line="14" selection-end-column="56" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/lib/python2.7/multiprocessing/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="116">
-          <caret line="105" column="0" selection-start-line="105" selection-start-column="0" selection-end-line="105" selection-end-column="0" />
         </state>
       </provider>
     </entry>
@@ -794,13 +831,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file:///usr/lib/python2.7/threading.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="65">
-          <caret line="1046" column="0" selection-start-line="1046" selection-start-column="0" selection-end-line="1046" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/.PyCharm2016.1/system/python_stubs/-1247972723/__builtin__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="192">
@@ -835,17 +865,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="548">
           <caret line="47" column="63" selection-start-line="47" selection-start-column="63" selection-end-line="47" selection-end-column="63" />
-          <folding>
-            <element signature="e#0#89#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file:///usr/local/lib/python2.7/dist-packages/Django-1.9.7-py2.7.egg/django/db/models/fields/__init__.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1202">
-          <caret line="1627" column="6" selection-start-line="1627" selection-start-column="6" selection-end-line="1627" selection-end-column="6" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -879,33 +898,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/common/tests/test_process_manager.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="30">
-          <caret line="5" column="0" selection-start-line="5" selection-start-column="0" selection-end-line="5" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#32#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/common/tests/test_socket_server.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="15" column="8" selection-start-line="15" selection-start-column="8" selection-end-line="15" selection-end-column="8" />
-          <folding>
-            <element signature="e#0#32#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/local/lib/python2.7/dist-packages/Django-1.9.7-py2.7.egg/django/db/backends/base/base.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#11#0" expanded="false" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -913,7 +909,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-495">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -922,7 +917,7 @@
         <state relative-caret-position="-630">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#0#39#0" expanded="true" />
+            <element signature="e#0#39#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -945,14 +940,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mirror/models.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="15">
-          <caret line="1" column="24" selection-start-line="1" selection-start-column="24" selection-end-line="1" selection-end-column="24" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/.PyCharm2016.1/system/python_stubs/-1247972723/_socket.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="284">
@@ -961,48 +948,130 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/common/libs/socket_server.py">
+    <entry file="file:///usr/lib/python2.7/multiprocessing/connection.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="683">
-          <caret line="77" column="13" selection-start-line="77" selection-start-column="13" selection-end-line="77" selection-end-column="13" />
-          <folding>
-            <element signature="e#16#29#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mirror/management/commands/mirrordata.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="75">
-          <caret line="5" column="39" selection-start-line="5" selection-start-column="39" selection-end-line="5" selection-end-column="39" />
+        <state relative-caret-position="522">
+          <caret line="238" column="22" selection-start-line="238" selection-start-column="22" selection-end-line="238" selection-end-column="22" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mirror/libs/handler.py">
+    <entry file="file://$USER_HOME$/.PyCharm2016.1/system/python_stubs/-1247972723/_multiprocessing.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="750">
-          <caret line="50" column="22" selection-start-line="50" selection-start-column="22" selection-end-line="50" selection-end-column="22" />
-          <folding>
-            <element signature="e#0#35#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="192">
+          <caret line="34" column="6" selection-start-line="34" selection-start-column="6" selection-end-line="34" selection-end-column="6" />
+          <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/common/libs/process_manager.py">
+    <entry file="file:///usr/lib/python2.7/multiprocessing/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="99" column="0" selection-start-line="99" selection-start-column="0" selection-end-line="99" selection-end-column="0" />
+        <state relative-caret-position="252">
+          <caret line="105" column="45" selection-start-line="105" selection-start-column="45" selection-end-line="105" selection-end-column="45" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/lib/python2.7/threading.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="372">
+          <caret line="1036" column="4" selection-start-line="1036" selection-start-column="4" selection-end-line="1036" selection-end-column="4" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/lib/python2.7/dist-packages/Django-1.9.7-py2.7.egg/django/db/models/fields/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="147">
+          <caret line="1933" column="8" selection-start-line="1933" selection-start-column="8" selection-end-line="1933" selection-end-column="8" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/mirror/libs/proxy.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="368">
+        <state relative-caret-position="1263">
           <caret line="110" column="38" selection-start-line="110" selection-start-column="38" selection-end-line="110" selection-end-column="38" />
           <folding>
             <element signature="e#0#54#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mirror/management/commands/mirrordata.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="353">
+          <caret line="112" column="40" selection-start-line="112" selection-start-column="40" selection-end-line="112" selection-end-column="40" />
+          <folding>
+            <element signature="e#16#82#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/common/libs/process_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="4" column="100" selection-start-line="4" selection-start-column="100" selection-end-line="4" selection-end-column="100" />
+          <folding>
+            <element signature="e#0#41#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/common/tests/test_process_manager.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="420">
+          <caret line="103" column="8" selection-start-line="103" selection-start-column="8" selection-end-line="103" selection-end-column="28" />
+          <folding>
+            <element signature="e#0#32#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/common/libs/socket_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-495">
+          <caret line="9" column="20" selection-start-line="9" selection-start-column="20" selection-end-line="9" selection-end-column="20" />
+          <folding>
+            <element signature="e#0#32#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mirror/admin.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="180">
+          <caret line="39" column="0" selection-start-line="39" selection-start-column="0" selection-end-line="39" selection-end-column="0" />
+          <folding>
+            <element signature="e#15#47#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mirror/models.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="495">
+          <caret line="93" column="26" selection-start-line="93" selection-start-column="26" selection-end-line="93" selection-end-column="26" />
+          <folding>
+            <element signature="e#15#43#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mirror/libs/handler.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="218">
+          <caret line="42" column="13" selection-start-line="42" selection-start-column="13" selection-end-line="42" selection-end-column="13" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/common/tests/test_socket_server.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-935">
+          <caret line="29" column="71" selection-start-line="29" selection-start-column="71" selection-end-line="29" selection-end-column="71" />
+          <folding>
+            <element signature="e#0#32#0" expanded="true" />
           </folding>
         </state>
       </provider>

@@ -10,6 +10,7 @@ class BasicAdmin(admin.ModelAdmin):
 
     list_display = ('id', 'name', 'enable', 'desc')
 
+
 @admin.register(OracleTarget)
 class OracleTargetAdmin(admin.ModelAdmin):
 
@@ -50,7 +51,7 @@ class TableSQLAdmin(admin.ModelAdmin):
             }
         ), (
             'Pull SQL in Target Oracle Database', {
-                'descrhosttion': """
+                'description': """
                     1，SQL语句的结尾不要添加分号！
                 """,
                 'fields': ('pull',)
