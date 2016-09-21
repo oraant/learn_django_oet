@@ -9,24 +9,11 @@ class ProcessManager:  # change to protect function to avoid children class over
     Doesn't support multi-concurrence manager operations.
 
     Attributes:  # todo : complete this.
-        listen (bool):
-        status (str):
-        event_suspend_down (threading.Event):
-
-        parent (_multiprocessing.Connection):
-        child (_multiprocessing.Connection):
-
-        process (multiprocessing.process.Process):
-
-        cls.START (str):
-        cls.STOP (str):
-        cls.RESTART (str):
-        cls.STATUS (str):
-        cls.SUSPEND (str):
-
-        cls.STARTING (str):
-        ...
-
+        __parent (_multiprocessing.Connection): socket connection use to talk with child process.
+        __child (_multiprocessing.Connection): socket connection use to talk with parent process.
+        __status (str): parent and child process's status
+        __suspend_start_timer (threading.Timer): a timer to suspend start action.
+        __process (multiprocessing.process.Process):  child process.
     """
 
     # actions and status for child's job
@@ -47,11 +34,9 @@ class ProcessManager:  # change to protect function to avoid children class over
 
     # method for subclass
 
-    def __init__(self):  # todo : open,close,status, start,stop,restart, dormant,wake,reborn
+    def __init__(self):
         """
-        Must at end, because it will block child's code, and wait for pipe msg.
-        Attributes
-
+        Init variables for instance.
         """
         self.__parent, self.__child = Pipe()
 
@@ -61,15 +46,15 @@ class ProcessManager:  # change to protect function to avoid children class over
         self.__process = Process(target=self.__listen)
 
     def _start(self):
-        """Your code here, Make sure job is running and can be stop immediately."""
+        """Children Class's code here, Make sure job is running and can be stop immediately."""
         pass
 
     def _stop(self):
-        """Your code here, Make sure all job done and can be start immediately."""
+        """Children Class's code here, Make sure all job done and can be start immediately."""
         pass
 
     def _run(self):
-        """Your code here, do the main job."""
+        """Children Class's code here, do the main job."""
         pass
 
     # decorator for father and child
@@ -139,6 +124,7 @@ class ProcessManager:  # change to protect function to avoid children class over
             self.CLOSE_CHILD_PROCESS: self.__close,
         }
 
+        # call methods with args or not, and respond methods' result.
         while self.__status != self.CHILD_PROCESS_CLOSED:
             msg = self.__child.recv()  # blocking and wait.
             if msg['method'] in operations.keys():
@@ -158,10 +144,9 @@ class ProcessManager:  # change to protect function to avoid children class over
     @__premise([CHILD_PROCESS_OPENED, CHILD_JOB_STOPPED, CHILD_JOB_SUSPENDED])
     def __start(self, block=False):  # todo : optimize with map method, maybe.
         """
-        Starting child process's main job by call it's _run() in a new thread.
+        Starting child process's main job by calling _start().
         Args:
-            block (bool): block or not.
-
+            block (bool): when starting main job, just call _start() and wait for complete, or do it in a new thread.
         Returns:
             str: explain how's it going.
         """
@@ -184,8 +169,11 @@ class ProcessManager:  # change to protect function to avoid children class over
     @__premise([CHILD_JOB_RUNNING])
     def __stop(self, block=False):  # todo : maybe join is better when blocking code.
         """
-        Stop child process's main job by call it's _terminate() in a new non-daemon thread.
-        Stop child process's listener by change the self.listen variable after child's main job terminated.
+        Stopping child process's main job by calling _stop().
+        Args:
+            block (bool): when stopping main job, just call _stop() and wait for complete, or do it in a new thread.
+        Returns:
+            str: explain how's it going.
         """
 
         self.__status = self.CHILD_JOB_STOPPING
@@ -206,8 +194,9 @@ class ProcessManager:  # change to protect function to avoid children class over
     @__premise([CHILD_JOB_RUNNING, CHILD_JOB_STOPPED])
     def __restart(self):
         """
-        Restart the child process.
-        Note that self.listen and self.running changed to False first, then changed to True before listener stop.
+        Restart the child process's main job by calling _stop(True) and _start().
+        Returns:
+            str: explain how's it going.
         """
 
         def _restart_handler():  # will block for a will
@@ -225,6 +214,19 @@ class ProcessManager:  # change to protect function to avoid children class over
 
     @__premise([CHILD_JOB_RUNNING, CHILD_JOB_STOPPED, CHILD_JOB_SUSPENDED])
     def __reborn(self, time):
+        """
+        Reborn the child process's main job.
+
+        Different from restart() is that this method will stop the main job immediately, but start it after a long time.
+        The waiting status is called 'CHILD_JOB_SUSPENDED', and the start action is called 'suspend'.
+        When child's process is 'suspended', calling __reborn will cancel the wait action.
+
+        Args:
+            time (int): time to wait when suspend the start action.
+
+        Returns:
+            str: explain how's it going.
+        """
 
         # todo : create a timer(or wait event thread) at first time, close it at next time.
 
@@ -272,5 +274,10 @@ class ProcessManager:  # change to protect function to avoid children class over
         return msg
 
     def __check(self):
+        """
+
+        Returns:
+            str: the status of child's process
+        """
         msg = "child process's job status is %s" % self.__status
         return msg
