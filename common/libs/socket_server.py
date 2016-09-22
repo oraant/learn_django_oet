@@ -140,4 +140,4 @@ class SocketServer:
     # functions for child classes to overwrite.
 
     def _handle(self, request):
-        pass
+        return 'this is handle~'
