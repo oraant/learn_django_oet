@@ -15,6 +15,7 @@ mysql-connector==2.1.3
 pytz # pre for APScheduler
 APScheduler==3.2.0
 Cython==0.24.1
+ConcurrentLogHandler==0.9.1
 
 ######### Ubuntu ################
 

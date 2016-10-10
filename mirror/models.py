@@ -2,6 +2,8 @@
 from django.db import models
 from django.core.validators import RegexValidator
 from datetime import timedelta
+from django.conf import settings
+from os.path import join
 
 # configs for this model.
 
@@ -10,12 +12,12 @@ class GlobalConfig(models.Model):
     """Global configs with mirror model"""
 
     LOG_LEVEL = (
-        ('0', 'NOTSET'),
-        ('10', 'DEBUG'),
-        ('20', 'INFO'),
-        ('30', 'WARNING'),
-        ('40', 'ERROR'),
-        ('50', 'CRITICAL'),
+        (0, 'NOTSET'),
+        (10, 'DEBUG'),
+        (20, 'INFO'),
+        (30, 'WARNING'),
+        (40, 'ERROR'),
+        (50, 'CRITICAL'),
     )
 
     class Meta:
@@ -28,8 +30,11 @@ class GlobalConfig(models.Model):
 
     run = models.BooleanField(default=True, help_text="Do you want to start or stop this model at web level.")
 
-    log_file = models.CharField(max_length=100, default="/var/log/oet/mirror.log")
-    log_level = models.CharField(max_length=10, default="WARNING", choices=LOG_LEVEL)
+    log_file = models.CharField(max_length=100, default=join(settings.BASE_DIR, 'data', 'mirror.log'))
+    log_level = models.IntegerField(default=30, choices=LOG_LEVEL)
+    log_size = models.IntegerField(default=10, help_text="Logfile's size, Unit is MB. Max is 32767 MB.")
+    log_count = models.IntegerField(default=3, help_text="Backup logs count.")
+    log_format = models.CharField(max_length=100, default="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     sock_addr = models.GenericIPAddressField(
         default="127.0.0.1",

@@ -1,5 +1,6 @@
 from daemon import DaemonContext
 import socket
+import logging
 
 
 class SocketServer:
@@ -7,6 +8,7 @@ class SocketServer:
     Run a server to handle messages.
 
     Attributes:
+        logger (logging.Logger): Logger to log records.
         listen (bool): Dose the server need keep listening
         actions (dict): Decide when receiving request with string, which method to respond it.
     """
@@ -20,6 +22,9 @@ class SocketServer:
         """
         self.sock_host = sock_host
         self.sock_port = sock_port
+
+        self.logger = logging.getLogger()
+        self.context = DaemonContext()
 
         self.listen = True
 
@@ -39,8 +44,10 @@ class SocketServer:
         Args:
             daemon (bool): Running the server in background daemon of not.
         """
+        self.logger.info("starting server at %s:%d." % (self.sock_host, self.sock_port))
+
         if daemon:
-            with DaemonContext():
+            with self.context:
                 self.__start()
         else:
             self.__start()
@@ -58,6 +65,7 @@ class SocketServer:
         Raises:
             socket.error: Unknown socket error occurred.
         """
+        self.logger.info("sending request to server with %s" % request)
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             client_socket.connect((self.sock_host, self.sock_port))
@@ -75,10 +83,12 @@ class SocketServer:
 
     def stop(self):
         """Send stop request to server."""
+        self.logger.info("stopping server status")
         return self.request(self.STOP_SOCKET_SERVER)
 
     def check(self):
         """Send check request to server."""
+        self.logger.info("checking server status")
         return self.request(self.CHECK_SOCKET_SERVER)
 
     def test(self):
@@ -87,6 +97,7 @@ class SocketServer:
         Returns:
             bool: if socket is running.
         """
+        self.logger.debug("testing if server is running")
         response = self.request(self.CHECK_SOCKET_SERVER)
         if response == self.SERVER_IS_RUNNING:
             return True
@@ -97,6 +108,7 @@ class SocketServer:
 
     def __start(self):
         """Start socket server and listening request!"""
+        self.logger.debug("server starting in background.")
 
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # make server can be restart immediately.
@@ -105,13 +117,18 @@ class SocketServer:
 
         while self.listen:
             connection, address = server_socket.accept()
+            self.logger.debug("server started")
             request = connection.recv(1024)
 
+            self.logger.debug("server receiving request: %s." % request)
             response = self.__handle(request)
+
+            self.logger.debug("server sending response: %s." % response)
             connection.send(response)
 
             if not self.listen:
                 connection.close()
+                self.logger.debug("server stopped")
 
     def __handle(self, request):
         """
@@ -123,8 +140,10 @@ class SocketServer:
         Returns:
             str: response string.
         """
+        self.logger.debug("server handling request: %s." % request)
 
         if request in self.actions.keys():
+            self.logger.debug("server handling request: %s." % request)
             return self.actions.get(request)()
         else:
             return self._handle(request)
@@ -134,6 +153,7 @@ class SocketServer:
 
     def __stop(self):
         """Close server and respond request."""
+        self.logger.debug("server stopping.")
         self.listen = False
         return self.STOPPING_SERVER
 

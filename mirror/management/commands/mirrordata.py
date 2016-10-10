@@ -1,28 +1,26 @@
 # coding:utf-8
 
 from django.core.management.base import BaseCommand, CommandParser
-import daemon
 from mirror.models import GlobalConfig, OracleTarget
-from mirror.libs.handler import Handler
-from common.libs.socket_server import SocketServer
+# from common.libs.socket_server import SocketServer
+from mirror.libs.server import Server
 
 # complete this with daemon and socket server.
 
 
 class Command(BaseCommand):
 
-    help = "Start or stop mirroring data from Target Oracle Database. "
+    help = "Start or stop mirroring data from Target Oracle Database."
 
     def __init__(self):
         BaseCommand.__init__(self)
 
         # get socket server object.
         self.config = GlobalConfig.objects.get(enable=True)
-        self.handler = Handler()
-        self.server = SocketServer(self.config.sock_addr, self.config.sock_port, self.handler)
+        self.server = Server(self.config.sock_addr, self.config.sock_port)
 
         # actions for arg parser.
-        self.socket_server_actions = ['startup', 'shutdown', 'check']
+        self.socket_server_actions = ['startup', 'shutdown', 'check', 'debug']
         self.proxy_process_actions = ['open', 'close']
         self.proxy_job_actions = ['start', 'stop', 'check', 'restart', 'reborn']
 
@@ -99,11 +97,9 @@ class Command(BaseCommand):
     def server_handle(self, options):
         action = options['action']
 
-        def startup():
+        def startup(daemon=True):
             if not self.server.test():
-                with daemon.DaemonContext():
-                    self.server.start()
-                self.server.start()
+                self.server.start(daemon)
             else:
                 msg = self.server.check()
                 self.stdout.write(msg)
@@ -119,7 +115,10 @@ class Command(BaseCommand):
             msg = self.server.check()
             self.stdout.write(msg)
 
-        functions = [startup, shutdown, check]
+        def debug():
+            startup(False)
+
+        functions = [startup, shutdown, check, debug]
         operations = dict(zip(self.socket_server_actions, functions))
         operations.get(action)()
 
