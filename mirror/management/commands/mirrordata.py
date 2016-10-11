@@ -17,7 +17,7 @@ class Command(BaseCommand):
 
         # get socket server object.
         self.config = GlobalConfig.objects.get(enable=True)
-        self.server = Server(self.config.sock_addr, self.config.sock_port)
+        self.server = Server()
 
         # actions for arg parser.
         self.socket_server_actions = ['startup', 'shutdown', 'check', 'debug']

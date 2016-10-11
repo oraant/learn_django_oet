@@ -41,15 +41,18 @@ class Proxy(ProcessManager):
             logger (logging.Logger): handle output logs
         """
 
-        # init instance parameters
-        self.target = target
-        self.logger = logger
-
         # init parent things.
         ProcessManager.__init__(self)
 
+        # init instance parameters
+        self.target = target
+        self.logger = logger
+        self.logger.debug('proxy prepared.')
+
     def __prepare(self):
         """Prepare workers, table_collection, and scheduler."""
+
+        self.logger.debug("preparing workers")
 
         self.table_collection = getattr(models, self.target.table_collection)
         self.scheduler = Scheduler()
@@ -69,14 +72,16 @@ class Proxy(ProcessManager):
     def __close_workers(self):
         """Close workers and record logs of the information."""
 
+        self.logger.debug("closing workers")
+
         msg = self.puller.close()
-        self.logger.info(msg)
+        self.logger.debug("closing puller: %s" % msg)
 
         msg = self.cacher.close()
-        self.logger.info(msg)
+        self.logger.debug("closing cacher: %s" % msg)
 
         msg = self.recorder.close()
-        self.logger.info(msg)
+        self.logger.debug("closing recorder: %s" % msg)
 
     def __schedule(self):
         """
@@ -84,6 +89,7 @@ class Proxy(ProcessManager):
         """
 
         # add jobs
+        self.logger.debug("adding jobs to scheduler.")
         for table in self.table_collection:
             name = "%s.%s" % (self.target.name, table.name)
             seconds = table.period.seconds
@@ -91,6 +97,9 @@ class Proxy(ProcessManager):
             # todo : next_run_time should be now for jobs.
             self.scheduler.add_job(self.__job, 'interval', args=(table,), name=name, seconds=seconds)
             self.logger.info("add job for %s, interval seconds is %s." % (name, seconds))
+            self.scheduler.add_listener(self.__listener)
+
+        self.logger.debug("jobs add done.")
 
         # run jobs
         try:
@@ -110,7 +119,7 @@ class Proxy(ProcessManager):
 
         data = self.puller.pull(table)
         self.cacher.cache(table, data)
-        self.recorder.record(table.name, table.period.seconds)
+        self.recorder.record(str(table.name), table.period.seconds)
 
     def __listener(self, event):  # todo : complete this.
 
@@ -120,6 +129,7 @@ class Proxy(ProcessManager):
         try:
             raise event.exception
         except Exception as e:
+            self.logger.error(e)
             pass
 
     # overwrite father's method
@@ -131,6 +141,3 @@ class Proxy(ProcessManager):
     def _stop(self):
         self.scheduler.shutdown()
         self.__close_workers()
-
-    def _run(self):
-        pass

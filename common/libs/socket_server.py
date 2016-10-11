@@ -44,6 +44,7 @@ class SocketServer:
         Args:
             daemon (bool): Running the server in background daemon of not.
         """
+        self.logger.info("------------------------")
         self.logger.info("starting server at %s:%d." % (self.sock_host, self.sock_port))
 
         if daemon:
@@ -110,14 +111,20 @@ class SocketServer:
         """Start socket server and listening request!"""
         self.logger.debug("server starting in background.")
 
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # make server can be restart immediately.
-        server_socket.bind((self.sock_host, self.sock_port))
-        server_socket.listen(1)
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # make server can be restart immediately.
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_socket.bind((self.sock_host, self.sock_port))
+        self.server_socket.listen(1)
 
+        self._start()
+        self.__listen()
+
+    def __listen(self):
+        """Start listening request."""
+        self.logger.debug("Start listening")
         while self.listen:
-            connection, address = server_socket.accept()
-            self.logger.debug("server started")
+            connection, address = self.server_socket.accept()
             request = connection.recv(1024)
 
             self.logger.debug("server receiving request: %s." % request)
@@ -155,9 +162,16 @@ class SocketServer:
         """Close server and respond request."""
         self.logger.debug("server stopping.")
         self.listen = False
+        self._stop()
         return self.STOPPING_SERVER
 
     # functions for child classes to overwrite.
 
     def _handle(self, request):
-        return 'this is handle~'
+        return 'Parent Class is handling message.'
+
+    def _start(self):
+        pass
+
+    def _stop(self):
+        pass

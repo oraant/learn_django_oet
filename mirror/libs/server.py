@@ -1,8 +1,8 @@
 from mirror.libs.proxy import Proxy
 from mirror.models import GlobalConfig, OracleTarget
 from common.libs.socket_server import SocketServer
-from cloghandler import ConcurrentRotatingFileHandler as LogHandler  # won't use this
-# from logging.handlers import RotatingFileHandler as LogHandler
+# from cloghandler import ConcurrentRotatingFileHandler as LogHandler  # won't use this
+from logging.handlers import RotatingFileHandler as LogHandler  # todo : processes's number better less than 50
 import logging
 import os
 from django.conf import settings
@@ -10,19 +10,24 @@ from django.conf import settings
 
 class Server(SocketServer):
 
-    def __init__(self, sock_host, sock_port):
+    def __init__(self):
 
+        # init parent class's instance.
         self.config = GlobalConfig.objects.get(enable=True)
         SocketServer.__init__(self, self.config.sock_addr, self.config.sock_port)
 
-        self.set_logger()
-
+        # get proxies for every oracle target.
         self.proxies = dict()
-
         for target in OracleTarget.objects.all():
             name = target.name
             proxy = Proxy(target, self.logger)
-            self.proxies.update(name=proxy)
+            self.proxies[name] = proxy
+
+        # overwrite parent's logger and context, to make sure Pipe and Logger in child can work.
+        self.set_logger()
+        self.set_context()
+
+        self.logger.debug("proxies is: %s" % str(self.proxies))
 
     def set_logger(self):
         """
@@ -48,8 +53,17 @@ class Server(SocketServer):
         self.logger.addHandler(log_handler)
         self.logger.setLevel(log_level)
 
-        self.context.files_preserve = [log_handler.stream]  # make sure logger can be used in daemon process.
-        self.logger.debug("set logger done")
+    def set_context(self):
+        """custom parent's daemon context."""
+
+        # get file descriptors for logger and Pipe connections in every proxy.
+        preserves = [handler.stream for handler in self.logger.handlers]
+        for proxy in self.proxies.values():
+            preserves += proxy.filenos
+
+        self.context.files_preserve = preserves  # make sure logger can be used in daemon process.
+        self.logger.debug("==== --- set logger done --- ====")
+        self.logger.debug("tttt %s " % str(preserves))
 
     def _handle(self, request):
         """
@@ -65,26 +79,30 @@ class Server(SocketServer):
         action = options['action']
         targets = options['targets']
 
-        responses = []
-
+        self.logger.debug("handled options is: %s" % str(options))
+        response_list = []
         for name in targets:
+            self.logger.debug("name is: %s" % name)
             proxy = self.proxies.get(name)
-            response = self.call(proxy, action)
-            responses.append(response)
+            self.logger.debug("proxy is: %s" % str(proxy))
+            proxy_response = self.call(proxy, action)
+            response_list.append(proxy_response)
+        response = '\n'.join(response_list)
 
-        return '\n'.join(responses)
+        self.logger.debug("response is : %s" % response)
+        return response
 
-    @staticmethod
-    def call(proxy, function):
+    def call(self, proxy, function):
         """
-
         Args:
             proxy (Proxy):
             function (str):
 
         Returns:
-
+            str: response
         """
+
+        self.logger.debug("calling %s's %s" % (proxy.target.name, function))
 
         operations = {
             "open": proxy.open,
