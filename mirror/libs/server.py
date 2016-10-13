@@ -1,60 +1,79 @@
 from mirror.libs.proxy import Proxy
-from mirror.models import GlobalConfig, OracleTarget
 from common.libs.socket_server import SocketServer
 # from cloghandler import ConcurrentRotatingFileHandler as LogHandler  # won't use this
-from logging.handlers import RotatingFileHandler as LogHandler  # todo : processes's number better less than 50
+from logging.handlers import RotatingFileHandler as LogHandler
 import logging
 import os
 from django.conf import settings
 
 
 class Server(SocketServer):
+    """
+    Receive request from user, and manage proxy for every oracle target.
+    Attributes:
+        proxies (dict{str:Proxy}): a dict contains all proxy for every target.
+    """
 
-    def __init__(self):
+    def __init__(self, global_config, oracle_targets):
+        """
+        Init socket server, overwrite it's logger and context, and prepare proxy for every oracle target.
+        Args:
+            global_config (mirror.models.GlobalConfig): global configs
+            oracle_targets (list[mirror.models.OracleTarget]): oracle targets
+        """
 
         # init parent class's instance.
-        self.config = GlobalConfig.objects.get(enable=True)
-        SocketServer.__init__(self, self.config.sock_addr, self.config.sock_port)
+        SocketServer.__init__(self, global_config.sock_addr, global_config.sock_port)
 
-        # get proxies for every oracle target.
-        self.proxies = dict()
-        for target in OracleTarget.objects.all():
-            name = target.name
-            proxy = Proxy(target, self.logger)
-            self.proxies[name] = proxy
+        # get proxies for every oracle target.  # todo : should be in _start() method, but oracle target will error.
+        self.proxies = [(target.name, Proxy(target, self.logger)) for target in oracle_targets]
+        self.proxies = dict(self.proxies)
 
-        # overwrite parent's logger and context, to make sure Pipe and Logger in child can work.
-        self.set_logger()
-        self.set_context()
+        # list of opened and started proxy  # todo : should have reborn
+        self.opened_proxies = set()
+        self.started_proxies = set()
 
-        self.logger.debug("proxies is: %s" % str(self.proxies))
+        # overwrite father class's logger and daemon context
+        self.__set_logger(global_config)
+        self.__set_context()
 
-    def set_logger(self):
+    def __set_logger(self, config):  # todo : processes's number better less than 50
         """
-        Add handler for father's logger, and set it's log level.
+        Overwrite father's logger: add handler, set log level and format.
+        Args:
+            config (mirror.models.GlobalConfig): global configs
         """
 
-        log_file = os.path.abspath(self.config.log_file)
-        log_level = self.config.log_level
-        log_size = self.config.log_size * 1024 * 1024
-        log_count = self.config.log_count
-        log_format = self.config.log_format
+        # get log configs
+        log_file = os.path.abspath(config.log_file)
+        log_level = config.log_level
+        log_size = config.log_size * 1024 * 1024
+        log_count = config.log_count
+        log_format = config.log_format
 
-        try:  # get log_file
+        # get log_file
+        try:
             log_handler = LogHandler(log_file, 'a', log_size, log_count)
         except IOError:
             log_file = os.path.join(settings.BASE_DIR, 'data', 'mirror.log')
             log_handler = LogHandler(log_file, 'a', log_size, log_count)
 
+        # set format
         formatter = logging.Formatter(log_format)
         log_handler.setFormatter(formatter)
 
+        # custom logger
         self.logger.name = "MirrorData"
         self.logger.addHandler(log_handler)
         self.logger.setLevel(log_level)
 
-    def set_context(self):
-        """custom parent's daemon context."""
+        # write first log!
+        self.logger.debug("============================================================")
+        self.logger.debug("set logger done.")
+
+    def __set_context(self):
+        """custom parent's daemon context, make sure Pipe and Logger in child can work."""
+        self.logger.debug("custom parent's daemon context.")
 
         # get file descriptors for logger and Pipe connections in every proxy.
         preserves = [handler.stream for handler in self.logger.handlers]
@@ -62,14 +81,12 @@ class Server(SocketServer):
             preserves += proxy.filenos
 
         self.context.files_preserve = preserves  # make sure logger can be used in daemon process.
-        self.logger.debug("==== --- set logger done --- ====")
-        self.logger.debug("tttt %s " % str(preserves))
 
     def _handle(self, request):
         """
+        Handle request and return response.
         Args:
-            request (str):
-
+            request (str): user's request
         Returns:
             response (str): response for request.
         """
@@ -79,30 +96,29 @@ class Server(SocketServer):
         action = options['action']
         targets = options['targets']
 
-        self.logger.debug("handled options is: %s" % str(options))
-        response_list = []
-        for name in targets:
-            self.logger.debug("name is: %s" % name)
-            proxy = self.proxies.get(name)
-            self.logger.debug("proxy is: %s" % str(proxy))
-            proxy_response = self.call(proxy, action)
-            response_list.append(proxy_response)
-        response = '\n'.join(response_list)
-
-        self.logger.debug("response is : %s" % response)
+        response = [self.__call(target, action) for target in targets]
         return response
 
-    def call(self, proxy, function):
+    def __call(self, target, function):
         """
+        Call proxy's function and get response.
         Args:
-            proxy (Proxy):
-            function (str):
-
+            target (str): name of proxy
+            function (str): which function to call
         Returns:
             str: response
         """
 
-        self.logger.debug("calling %s's %s" % (proxy.target.name, function))
+        self.logger.debug("calling %s's %s" % (target, function))
+
+        proxy = self.proxies.get(target)
+
+        # add
+        if function == "open":
+            self.opened_proxies.add(target)
+
+        if function == "start":
+            self.opened_proxies.add(target)
 
         operations = {
             "open": proxy.open,

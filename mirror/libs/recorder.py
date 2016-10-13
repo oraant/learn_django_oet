@@ -8,6 +8,9 @@ class Recorder:
         connection (redis.client.Redis): connection to redis server.
     """
 
+    def __str__(self):
+        return "Recorder for %s" % self.dsn.name
+
     def __init__(self, dsn, db_number):
         """
         Connect to Redis Server.

@@ -11,6 +11,9 @@ class Puller(object):
         connection (cx_Oracle.Connection): connection to target oracle database.
     """
 
+    def __str__(self):
+        return "Puller for %s" % self.dsn.name
+
     def __init__(self, dsn):
         """
         Connect to target oracle database.
@@ -32,8 +35,8 @@ class Puller(object):
         # get connection
         try:
             self.connection = cx_Oracle.connect(dsn.user, dsn.password, dsn.dns(), threaded=True)
-        except cx_Oracle.InterfaceError as e:
-            raise ORACLEConnectError(e)
+        except (cx_Oracle.InterfaceError, cx_Oracle.DatabaseError) as e:
+            raise ORACLEConnectError("Error: %s. DSN: %s" % (e, dsn.dns()))
 
     def close(self):
         """

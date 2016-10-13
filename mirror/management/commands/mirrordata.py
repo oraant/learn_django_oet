@@ -16,8 +16,17 @@ class Command(BaseCommand):
         BaseCommand.__init__(self)
 
         # get socket server object.
-        self.config = GlobalConfig.objects.get(enable=True)
-        self.server = Server()
+        try:
+            global_config = GlobalConfig.objects.filter(enable=True)[0]
+            oracle_targets = OracleTarget.objects.all()
+        except IndexError as e:
+            print "Can't get global config, no config's enable is True."
+            return
+        except Exception as e:
+            print "Unknown Error: [%s]: %s" % (type(e), e)
+            return
+        else:
+            self.server = Server(global_config, oracle_targets)
 
         # actions for arg parser.
         self.socket_server_actions = ['startup', 'shutdown', 'check', 'debug']
@@ -25,7 +34,7 @@ class Command(BaseCommand):
         self.proxy_job_actions = ['start', 'stop', 'check', 'restart', 'reborn']
 
         # target names can be choice.
-        self.targets = [x.name for x in OracleTarget.objects.all()]
+        self.targets = [x.name for x in oracle_targets]
 
     def add_arguments(self, parser):
         """
@@ -97,14 +106,14 @@ class Command(BaseCommand):
     def server_handle(self, options):
         action = options['action']
 
-        def startup(daemon=True):
+        def startup(daemon=True):  # todo : should be in socket_server
             if not self.server.test():
                 self.server.start(daemon)
             else:
                 msg = self.server.check()
                 self.stdout.write(msg)
 
-        def shutdown():
+        def shutdown():  # todo : should be in socket_server
             if self.server.test():
                 msg = self.server.stop()
             else:

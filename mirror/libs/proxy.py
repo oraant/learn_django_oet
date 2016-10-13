@@ -4,7 +4,9 @@ from mirror.libs.cacher import Cacher
 from mirror.libs.recorder import Recorder
 from mirror.libs import exceptions as exc
 import mirror.models as models
-from apscheduler.schedulers.blocking import BlockingScheduler as Scheduler
+#from apscheduler.schedulers.blocking import BlockingScheduler as Scheduler
+from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
+from apscheduler.events import EVENT_JOB_ERROR
 
 
 # todo : concurrent process config
@@ -50,38 +52,56 @@ class Proxy(ProcessManager):
         self.logger.debug('proxy prepared.')
 
     def __prepare(self):
-        """Prepare workers, table_collection, and scheduler."""
+        """
+        Prepare table_collection, scheduler.
+        Get workers if they are all enabled and can be connect.
+        """
 
-        self.logger.debug("preparing workers")
+        self.table_collection = getattr(models, self.target.table_collection).objects.all()
+        self.logger.debug("preparing table_collection %s done." % self.target.table_collection)
 
-        self.table_collection = getattr(models, self.target.table_collection)
         self.scheduler = Scheduler()
+        self.logger.debug("preparing scheduler done.")
 
-        # Get workers if they are all enabled and connectable
-        try:
+        try:  # init cacher
             self.cacher = Cacher(self.target.mysql_server, self.target.mysql_db)
+        except (exc.NotEnableError, exc.MySQLConnectError) as e:
+            self.logger.error("Init %s's cacher failed: %s" % (self.target.name, e))
+            raise
+        else:
+            self.logger.error("Init %s's cacher done." % self.target.name)
+
+        try:  # init recorder
             self.recorder = Recorder(self.target.redis_server, self.target.redis_db)
-            self.puller = Puller(self.target)  # if mysql and redis is ok, we connect to them.
-        except exc.NotEnableError as e:
-            self.logger.error("[%s] Worker Not Enabled. Error: %s" % (self.target.name, e))
-            self.__close_workers()
-        except (exc.ORACLEConnectError, exc.MySQLConnectError, exc.RedisConnectError) as e:
-            self.logger.error("[%s] Worker Can't connect. Error: %s" % (self.target.name, e))
-            self.__close_workers()
+        except (exc.NotEnableError, exc.ORACLEConnectError) as e:
+            self.logger.error("Init %s's recorder failed: %s" % (self.target.name, e))
+            self.__close_workers([self.cacher])
+            raise
+        else:
+            self.logger.error("Init %s's recorder done." % self.target.name)
 
-    def __close_workers(self):
-        """Close workers and record logs of the information."""
+        try:  # init puller
+            self.puller = Puller(self.target)  # if mysql and redis is ok, we connect to oracle.
+        except (exc.NotEnableError, exc.ORACLEConnectError) as e:
+            self.logger.error("Init %s's puller failed: %s" % (self.target.name, e))
+            self.__close_workers([self.cacher, self.recorder])
+            raise
+        else:
+            self.logger.error("Init %s's puller done." % self.target.name)
 
-        self.logger.debug("closing workers")
+    def __close_workers(self, workers=None):
+        """
+        Close workers and record logs of the information.
+        Args:
+            workers (list): puller, cacher and recorder. If it none, then all there worker will be closed.
+        """
 
-        msg = self.puller.close()
-        self.logger.debug("closing puller: %s" % msg)
+        if not workers:
+            workers = [self.cacher, self.recorder, self.puller]
 
-        msg = self.cacher.close()
-        self.logger.debug("closing cacher: %s" % msg)
-
-        msg = self.recorder.close()
-        self.logger.debug("closing recorder: %s" % msg)
+        for worker in workers:
+            msg = worker.close()
+            self.logger.debug("closing %s: %s" % (str(worker), msg))
 
     def __schedule(self):
         """
@@ -97,13 +117,15 @@ class Proxy(ProcessManager):
             # todo : next_run_time should be now for jobs.
             self.scheduler.add_job(self.__job, 'interval', args=(table,), name=name, seconds=seconds)
             self.logger.info("add job for %s, interval seconds is %s." % (name, seconds))
-            self.scheduler.add_listener(self.__listener)
+            self.scheduler.add_listener(self.__listener, EVENT_JOB_ERROR)  # todo : test for tmp
 
         self.logger.debug("jobs add done.")
 
         # run jobs
         try:
+            self.logger.debug("starting scheduler.")
             self.scheduler.start()
+            self.logger.debug("scheduler started successfully.")
         except Exception as e:
             self.logger.error(e)
             self.scheduler.shutdown()
@@ -123,9 +145,6 @@ class Proxy(ProcessManager):
 
     def __listener(self, event):  # todo : complete this.
 
-        if not event.exception:
-            return
-
         try:
             raise event.exception
         except Exception as e:
@@ -135,9 +154,11 @@ class Proxy(ProcessManager):
     # overwrite father's method
 
     def _start(self):
+        """start scheduler in background thread."""
         self.__prepare()
         self.__schedule()
 
     def _stop(self):
+        """stop scheduler in background thread"""
         self.scheduler.shutdown()
         self.__close_workers()

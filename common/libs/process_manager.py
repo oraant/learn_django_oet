@@ -7,45 +7,67 @@ class ProcessManager:  # change to protect function to avoid children class over
     """
     This class will create a child process and do the main jobs, and manage children with father's method.
     This class fit with the situation when a man manager processes with command line.
-    Doesn't support multi-concurrence manager operations.
+    Doesn't support multi-concurrence manage operations.
 
-    Attributes:  # todo : complete this.
+    Attributes:
         __parent (_multiprocessing.Connection): socket connection use to talk with child process.
         __child (_multiprocessing.Connection): socket connection use to talk with parent process.
+        filenos (list[int]): file descriptors list, keep pipe open when turn to daemon, set by server.
+
+        logger (logging.Logger): better be overwrite by child class.
+
         __status (str): parent and child process's status
         __suspend_start_timer (threading.Timer): a timer to suspend start action.
-        __process (multiprocessing.process.Process):  child process.
+
+        cls.START_CHILD_JOB (str): request for start child process's job.
+        cls.STOP_CHILD_JOB (str): request for stop child process's job.
+        cls.CHECK_CHILD_JOB (str): request for check child process's job.
+        cls.RESTART_CHILD_JOB (str): request for restart child process's job.
+        cls.REBORN_CHILD_JOB (str): request for reborn child process's job.
+
+        cls.CHILD_JOB_STARTING (str): child process's job's status which means it's trying to start
+        cls.CHILD_JOB_RUNNING (str): child process's job's status which means it's running
+        cls.CHILD_JOB_STOPPING (str): child process's job's status which means it's trying to stop
+        cls.CHILD_JOB_STOPPED (str): child process's job's status which means it's stopped
+        cls.CHILD_JOB_SUSPENDED (str): child process's job's status which means it's hanging for reborn
+
+        cls.CLOSE_CHILD_PROCESS (str): request for close child's process
+
+        cls.PARENT_PROCESS_INITIAL (str): child process's stautus which means it's not been created yet.
+        cls.CHILD_PROCESS_OPENED (str): child process's stautus which means it's opened
+        cls.CHILD_PROCESS_CLOSED (str): child process's stautus which means it's closed
     """
 
-    # actions and status for child's job
+    # actions for child's job
+    START_CHILD_JOB = 'START_CHILD_JOB'
+    STOP_CHILD_JOB = 'STOP_CHILD_JOB'
+    CHECK_CHILD_JOB = 'CHECK_CHILD_JOB'
+    RESTART_CHILD_JOB = 'RESTART_CHILD_JOB'
+    REBORN_CHILD_JOB = 'REBORN_CHILD_JOB'
 
-    START_CHILD_JOB, STOP_CHILD_JOB, CHECK_CHILD_JOB = 'START_CHILD_JOB', 'STOP_CHILD_JOB', 'CHECK_CHILD_JOB'
-    RESTART_CHILD_JOB, REBORN_CHILD_JOB = 'RESTART_CHILD_JOB', 'REBORN_CHILD_JOB'
-
-    CHILD_JOB_STARTING, CHILD_JOB_RUNNING = 'CHILD_JOB_STARTING', 'CHILD_JOB_RUNNING'
-    CHILD_JOB_STOPPING, CHILD_JOB_STOPPED = 'CHILD_JOB_STOPPING', 'CHILD_JOB_STOPPED'
+    # status for child's job
+    CHILD_JOB_STARTING = 'CHILD_JOB_STARTING'
+    CHILD_JOB_RUNNING = 'CHILD_JOB_RUNNING'
+    CHILD_JOB_STOPPING = 'CHILD_JOB_STOPPING'
+    CHILD_JOB_STOPPED = 'CHILD_JOB_STOPPED'
     CHILD_JOB_SUSPENDED = 'CHILD_JOB_SUSPENDED'
 
-    # actions and status for child's process
-
+    # actions for child's process
     CLOSE_CHILD_PROCESS = 'CLOSE_CHILD_PROCESS'
 
+    # status for child's process
     PARENT_PROCESS_INITIAL = 'PARENT_PROCESS_INITIAL'
-    CHILD_PROCESS_OPENED, CHILD_PROCESS_CLOSED = 'CHILD_PROCESS_OPENED', 'CHILD_PROCESS_CLOSED'
+    CHILD_PROCESS_OPENED = 'CHILD_PROCESS_OPENED'
+    CHILD_PROCESS_CLOSED = 'CHILD_PROCESS_CLOSED'
 
     def __init__(self):
-        """
-        Init variables for instance.
-        """
         self.__parent, self.__child = Pipe()
-        self.filenos = [self.__parent.fileno(), self.__child.fileno()]  # keep pipe open when turn to daemon.
+        self.filenos = [self.__parent.fileno(), self.__child.fileno()]
 
         self.logger = getLogger()
 
         self.__status = self.PARENT_PROCESS_INITIAL  # use in father and child process with different value.
         self.__suspend_start_timer = None
-
-        self.__process = Process(target=self.__listen)
 
     # decorator for father and child
 
@@ -63,16 +85,16 @@ class ProcessManager:  # change to protect function to avoid children class over
 
     @__premise([PARENT_PROCESS_INITIAL])  # todo : should be open when closed. And add unit test.
     def open(self):
+        """Create and start child's process."""
         self.logger.info('opening child')
         self.__status = self.CHILD_PROCESS_OPENED
-        try:
-            self.__process.start()
-        except Exception as e:
-            self.logger.erro('opening child failed: %s' % e)
+        process = Process(target=self.__listen)
+        process.start()
         return 'child process generated'
 
     @__premise([CHILD_PROCESS_OPENED])
     def close(self):
+        """Send request to stop child's process."""
         self.logger.info('closing child')
         self.__status = self.CHILD_PROCESS_CLOSED
         self.__parent.send({'method': self.CLOSE_CHILD_PROCESS})
@@ -80,30 +102,35 @@ class ProcessManager:  # change to protect function to avoid children class over
 
     @__premise([CHILD_PROCESS_OPENED])
     def start(self):
+        """Send request to start child's job."""
         self.logger.info('starting child')
         self.__parent.send({'method': self.START_CHILD_JOB})
         return self.__parent.recv()
 
     @__premise([CHILD_PROCESS_OPENED])
-    def stop(self):  # can't start after stopped
+    def stop(self):  # can't start after stopped  # what's this for?
+        """Send request to stop child's job."""
         self.logger.info('stopping child')
         self.__parent.send({'method': self.STOP_CHILD_JOB})
         return self.__parent.recv()
 
     @__premise([CHILD_PROCESS_OPENED])
     def restart(self):
+        """Send request to restart child's job."""
         self.logger.info('restarting child')
         self.__parent.send({'method': self.RESTART_CHILD_JOB})
         return self.__parent.recv()
 
     @__premise([CHILD_PROCESS_OPENED])
     def reborn(self, time=10):
+        """Send request to reborn child's job."""
         self.logger.info('reborning child')
         self.__parent.send({'method': self.REBORN_CHILD_JOB, 'arg': time})
         return self.__parent.recv()
 
-    @__premise([CHILD_PROCESS_OPENED, CHILD_PROCESS_CLOSED, PARENT_PROCESS_INITIAL])
+    @__premise([CHILD_PROCESS_OPENED, CHILD_PROCESS_CLOSED])
     def check(self):
+        """Send request to check child's job."""
         self.logger.info('checking status of child')
         self.__parent.send({'method': self.CHECK_CHILD_JOB})
 
@@ -119,6 +146,8 @@ class ProcessManager:  # change to protect function to avoid children class over
 
     def __listen(self):  # the main thread running in child process.
 
+        self.logger.debug('start listening')
+
         operations = {
             self.START_CHILD_JOB: self.__start,
             self.STOP_CHILD_JOB: self.__stop,
@@ -133,6 +162,7 @@ class ProcessManager:  # change to protect function to avoid children class over
             self.logger.debug('keep listening')
 
             msg = self.__child.recv()  # blocking and wait.
+            self.logger.debug('received msg: %s' % msg)
 
             if msg['method'] in operations.keys():
                 if 'arg' in msg.keys():
@@ -142,7 +172,7 @@ class ProcessManager:  # change to protect function to avoid children class over
             else:
                 result = "Invalid Command."
 
-            self.logger.debug('child process sending response')
+            self.logger.debug('child process sending response: %s' % result)
             self.__child.send(result)
 
     @__premise([CHILD_JOB_STOPPED])
@@ -162,13 +192,20 @@ class ProcessManager:  # change to protect function to avoid children class over
         """
 
         self.logger.debug('child starting')
-
         self.__status = self.CHILD_JOB_STARTING
 
+        # try to call _start()
         def _start_handler():
-            self._start()
-            self.__status = self.CHILD_JOB_RUNNING
+            try:
+                self._start()
+            except Exception as e:
+                self.logger.error("Child process start failed: %s. Type is: %s" % (e, type(e)))
+                self.__status = self.CHILD_PROCESS_OPENED
+            else:
+                self.logger.debug("Child process start successfully")
+                self.__status = self.CHILD_JOB_RUNNING
 
+        # call child's _start in or not in thread.
         if block:
             _start_handler()
             msg = "Child process's job started"
@@ -272,7 +309,7 @@ class ProcessManager:  # change to protect function to avoid children class over
 
         def _cancel():
             if not self.__suspend_start_timer:
-                print "internal error: suspending canceling, but instance variable is None."  # todo : a log is better.
+                self.logger.error("Internal Error: suspending canceling, but instance variable is None.")
                 return
 
             self.__suspend_start_timer.cancel()

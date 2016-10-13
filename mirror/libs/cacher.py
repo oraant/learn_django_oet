@@ -12,6 +12,9 @@ class Cacher:
         connection (MySQLdb.connections.Connection): connection to MySQL server.
     """
 
+    def __str__(self):
+        return "Cacher for %s" % self.dsn.name
+
     def __init__(self, dsn, db_name):
 
         """
@@ -80,13 +83,17 @@ class Cacher:
         cursor = self.connection.cursor()  # this will not raise exceptions even the connection is closed.
 
         try:
+            a = 1  # todo : test for tmp
             cursor.execute(table.create)
+            a = 2  # todo : test for tmp
             cursor.execute(table.delete)
+            a = 3  # todo : test for tmp
             cursor.executemany(table.insert, data)
+            a = 4  # todo : test for tmp
 
         # maybe you want to generate a cursor after connection is closed.
         except MySQLdb.InterfaceError as e:
-            raise MySQLConnectError(e)
+            raise MySQLConnectError("Error is: %e. Code is %d" % (e,a))
 
         # MySQL server closed, or permission denied, or others.
         except MySQLdb.OperationalError as e:
