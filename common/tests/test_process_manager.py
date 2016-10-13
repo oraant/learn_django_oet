@@ -13,7 +13,7 @@ class MyProcessManager(ProcessManager):
         self.run = True
         ProcessManager.__init__(self)
 
-    def _start(self):
+    def _start_background_thread(self):
         self.run = True
         Thread(target=self._run).start()
         print '>>>'
@@ -23,7 +23,7 @@ class MyProcessManager(ProcessManager):
             sleep(2)
             print "-> -> ->"
 
-    def _stop(self):
+    def _stop_with_waiting(self):
         self.run = False
         sleep(2.2)
         print '<<<'

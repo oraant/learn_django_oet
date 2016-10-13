@@ -182,148 +182,99 @@ class ProcessManager:  # change to protect function to avoid children class over
         return 'child process is closed.'
 
     @__premise([CHILD_PROCESS_OPENED, CHILD_JOB_STOPPED, CHILD_JOB_SUSPENDED])
-    def __start(self, block=False):  # todo : optimize with map method, maybe.
-        """
-        Starting child process's main job by calling _start().
-        Args:
-            block (bool): when starting main job, just call _start() and wait for complete, or do it in a new thread.
-        Returns:
-            str: explain how's it going.
-        """
+    def __start(self):  # todo : optimize with map method, maybe.
+        """Starting child process's main job by calling _start().This wont block code."""
 
         self.logger.debug('child starting')
         self.__status = self.CHILD_JOB_STARTING
 
+        if self.__status == self.CHILD_JOB_SUSPENDED:
+            self.__cancel()
+
         # try to call _start()
-        def _start_handler():
-            try:
-                self._start()
-            except Exception as e:
-                self.logger.error("Child process start failed: %s. Type is: %s" % (e, type(e)))
-                self.__status = self.CHILD_PROCESS_OPENED
-            else:
-                self.logger.debug("Child process start successfully")
-                self.__status = self.CHILD_JOB_RUNNING
-
-        # call child's _start in or not in thread.
-        if block:
-            _start_handler()
-            msg = "Child process's job started"
+        try:
+            self._start_background_thread()
+        except Exception as e:
+            self.logger.error("Child process start failed: %s. Type is: %s" % (e, type(e)))
+            self.__status = self.CHILD_PROCESS_OPENED
         else:
-            Thread(target=_start_handler, name="calling start").start()
-            msg = "Trying to start child process's job"
+            self.logger.debug("Child process start successfully")
+            self.__status = self.CHILD_JOB_RUNNING
 
-        return msg
+        return "Child process start successfully"
 
-    @__premise([CHILD_JOB_RUNNING])
-    def __stop(self, block=False):  # todo : maybe join is better when blocking code.
-        """
-        Stopping child process's main job by calling _stop().
-        Args:
-            block (bool): when stopping main job, just call _stop() and wait for complete, or do it in a new thread.
-        Returns:
-            str: explain how's it going.
-        """
+    @__premise([CHILD_JOB_RUNNING, CHILD_JOB_SUSPENDED])
+    def __stop(self):
+        """Stopping child process's main job by calling _stop().This will block code for a well."""
 
         self.logger.debug('child stopping')
-
         self.__status = self.CHILD_JOB_STOPPING
 
-        def _stop_handler():
-            self._stop()
+        if self.__status == self.CHILD_JOB_SUSPENDED:
+            self.__cancel()
+            return "Child process's job was suspending, now canceled."
+        else:
+            self._stop_with_waiting()
+
+            self.logger.debug("Child process's job stopped.")
             self.__status = self.CHILD_JOB_STOPPED
 
-        if block:
-            _stop_handler()
-            msg = "Child process's job stopped."
-        else:
-            Thread(target=_stop_handler, name="calling stop").start()
-            msg = "Trying to stop Child process's job."
+            return "Child process's job stopped."
 
-        return msg
-
-    @__premise([CHILD_JOB_RUNNING, CHILD_JOB_STOPPED])
+    @__premise([CHILD_JOB_RUNNING, CHILD_JOB_STOPPED, CHILD_JOB_SUSPENDED])
     def __restart(self):
-        """
-        Restart the child process's main job by calling _stop(True) and _start().
-        Returns:
-            str: explain how's it going.
-        """
+        """Restart the child process's main job by calling _stop(True) and _start()."""
 
         self.logger.debug('child restarting')
 
-        def _restart_handler():  # will block for a will
-            self.__stop(True)
-            self.__start()
-
         if self.__status == self.CHILD_JOB_RUNNING:  # restart job
-            Thread(target=_restart_handler, name="calling restart").start()
-            msg = "Trying to restart Child process's job."
-        else:  # start job
-            self.__start()
-            msg = "Child process's job is not running.Trying to start it."
+            self.__stop()
+        self.__start()
 
-        return msg
+        return "Child process's job is not running.Trying to start it."
 
     @__premise([CHILD_JOB_RUNNING, CHILD_JOB_STOPPED, CHILD_JOB_SUSPENDED])
     def __reborn(self, time):
         """
         Reborn the child process's main job.
-
-        Different from restart() is that this method will stop the main job immediately, but start it after a long time.
-        The waiting status is called 'CHILD_JOB_SUSPENDED', and the start action is called 'suspend'.
-        When child's process is 'suspended', calling __reborn will cancel the wait action.
-
         Args:
             time (int): time to wait when suspend the start action.
-
-        Returns:
-            str: explain how's it going.
         """
 
         self.logger.debug('child reborning')
 
-        def _suspend():
-            if self.__suspend_start_timer:  # todo : can be removed after test.
-                print "internal error: suspending start, but instance variable is busy."  # todo : a log is better.
-                return
+        if self.__status == self.CHILD_JOB_RUNNING:
+            self.__stop()
+        elif self.__status == self.CHILD_JOB_SUSPENDED:
+            self.__cancel()
+        self.__suspend(time)
 
-            def _suspend_handler():
-                self.__start()
-                self.__suspend_start_timer = None
+        return "Child job suspending for start"
 
-            t = Timer(time, _suspend_handler)
-            self.__suspend_start_timer = t
-            t.start()
-            self.__status = self.CHILD_JOB_SUSPENDED
+    @__premise([CHILD_PROCESS_OPENED, CHILD_JOB_STOPPED])
+    def __suspend(self, time):
+        """Wait time seconds and call __start()"""
 
-            return "Child process's job is not running.Trying to reborn it."
+        if self.__suspend_start_timer:
+            self.logger.error("Internal Error: suspending start, but instance variable has value.")
+            raise StandardError("sdf")
 
-        def _reborn():  # block for a while
-            def _reborn_handler():
-                self.__stop(True)
-                _suspend()
+        self.logger.debug("child suspending")
+        self.__suspend_start_timer = Timer(time, self.__start)
+        self.__status = self.CHILD_JOB_SUSPENDED
+        self.__suspend_start_timer.start()
 
-            Thread(target=_reborn_handler).start()
-            return "Trying to reborn Child process's job."
+    @__premise([CHILD_JOB_SUSPENDED])
+    def __cancel(self):
+        """Cancel the suspend timer."""
+        if not self.__suspend_start_timer:
+            self.logger.error("Internal Error: suspending canceling, but instance variable is None.")
+            return
 
-        def _cancel():
-            if not self.__suspend_start_timer:
-                self.logger.error("Internal Error: suspending canceling, but instance variable is None.")
-                return
-
-            self.__suspend_start_timer.cancel()
-            self.__suspend_start_timer = None
-            return "Canceled suspend start for child process's job."
-
-        operations = {
-            self.CHILD_JOB_RUNNING: _reborn,
-            self.CHILD_JOB_STOPPED: _suspend,
-            self.CHILD_JOB_SUSPENDED: _cancel,
-        }
-
-        msg = operations.get(self.__status)()
-        return msg
+        self.logger.debug("child canceling suspend")
+        self.__suspend_start_timer.cancel()
+        self.__suspend_start_timer = None
+        self.__status = self.CHILD_JOB_STOPPED
 
     def __check(self):
         """
@@ -337,10 +288,10 @@ class ProcessManager:  # change to protect function to avoid children class over
 
     # method for subclass
 
-    def _start(self):
-        """Children Class's code here, Make sure job is running and can be stop immediately."""
+    def _start_background_thread(self):
+        """Children Class's code here, Make sure do works in background thread."""
         pass
 
-    def _stop(self):
-        """Children Class's code here, Make sure all job done and can be start immediately."""
+    def _stop_with_waiting(self):
+        """Children Class's code here, Make sure when this method done, works are done."""
         pass
