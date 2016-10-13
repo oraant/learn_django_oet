@@ -153,12 +153,12 @@ class Proxy(ProcessManager):
 
     # overwrite father's method
 
-    def _start(self):
+    def _start_background_thread(self):
         """start scheduler in background thread."""
         self.__prepare()
         self.__schedule()
 
-    def _stop(self):
+    def _stop_with_waiting(self):
         """stop scheduler in background thread"""
         self.scheduler.shutdown()
         self.__close_workers()
