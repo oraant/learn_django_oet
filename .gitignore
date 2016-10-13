@@ -1,8 +1,8 @@
-# Tmp
-*.hahahaha
+# Pycharm
+.idea/
 
 # Django
-bak
+bak/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

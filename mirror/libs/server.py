@@ -113,12 +113,15 @@ class Server(SocketServer):
 
         proxy = self.proxies.get(target)
 
-        # add
+        # let server know the proxies's status
         if function == "open":
             self.opened_proxies.add(target)
-
-        if function == "start":
-            self.opened_proxies.add(target)
+        elif function == "close":
+            self.opened_proxies.remove(target)
+        elif function == "start":
+            self.started_proxies.add(target)
+        elif function == "stop":
+            self.started_proxies.remove(target)
 
         operations = {
             "open": proxy.open,
@@ -131,3 +134,10 @@ class Server(SocketServer):
         }
 
         return operations.get(function)()
+
+    def _stop(self):
+        for target in self.started_proxies:
+            self.__call(target, "stop")
+
+        for target in self.opened_proxies:
+            self.__call(target, "close")
