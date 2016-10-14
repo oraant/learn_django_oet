@@ -1,6 +1,7 @@
 from multiprocessing import Process, Pipe
-from threading import Thread, Timer
+from threading import Timer
 from logging import getLogger
+import traceback
 
 
 class ProcessManager:  # change to protect function to avoid children class overwrite it attributes.
@@ -195,7 +196,9 @@ class ProcessManager:  # change to protect function to avoid children class over
         try:
             self._start_background_thread()
         except Exception as e:
+            error_info = traceback.format_exc()
             self.logger.error("Child process start failed: %s. Type is: %s" % (e, type(e)))
+            self.logger.error("Traceback is %s" % error_info)
             self.__status = self.CHILD_PROCESS_OPENED
         else:
             self.logger.debug("Child process start successfully")
