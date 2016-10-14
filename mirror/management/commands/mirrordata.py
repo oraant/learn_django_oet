@@ -6,6 +6,7 @@ from mirror.models import GlobalConfig, OracleTarget
 from mirror.libs.server import Server
 
 # complete this with daemon and socket server.
+#  todo : check every function, if need return, replace raise with return
 
 
 class Command(BaseCommand):
@@ -14,6 +15,7 @@ class Command(BaseCommand):
 
     def __init__(self):
         BaseCommand.__init__(self)
+        from mirror.models import GlobalConfig, OracleTarget
 
         # get socket server object.
         try:
@@ -26,7 +28,7 @@ class Command(BaseCommand):
             print "Unknown Error: [%s]: %s" % (type(e), e)
             return
         else:
-            self.server = Server(global_config, oracle_targets)
+            self.server = Server(global_config)
 
         # actions for arg parser.
         self.socket_server_actions = ['startup', 'shutdown', 'check', 'debug']
@@ -107,15 +109,15 @@ class Command(BaseCommand):
         action = options['action']
 
         def startup(daemon=True):  # todo : should be in socket_server
-            if not self.server.test():
-                self.server.start(daemon)
+            if not self.server.ping():
+                self.server.startup(daemon)
             else:
                 msg = self.server.check()
                 self.stdout.write(msg)
 
         def shutdown():  # todo : should be in socket_server
-            if self.server.test():
-                msg = self.server.stop()
+            if self.server.ping():
+                msg = self.server.shutdown()
             else:
                 msg = self.server.check()
             self.stdout.write(msg)
@@ -133,7 +135,7 @@ class Command(BaseCommand):
 
     def proxy_handle(self, options):
 
-        if not self.server.test():
+        if not self.server.ping():
             self.stdout.write('Server is not running, Please start it first.')
             return
 

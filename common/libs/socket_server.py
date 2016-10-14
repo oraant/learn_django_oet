@@ -1,6 +1,7 @@
 from daemon import DaemonContext
 import socket
 import logging
+import traceback
 
 
 class SocketServer:
@@ -41,12 +42,12 @@ class SocketServer:
 
         self.actions = {
             self.CHECK_SOCKET_SERVER: self.__check,
-            self.STOP_SOCKET_SERVER: self.__stop
+            self.STOP_SOCKET_SERVER: self.__shutdown
         }
 
     # functions in shell for call
 
-    def start(self, daemon=True):
+    def startup(self, daemon=True):
         """
         Start socket server.And optional turn this process in to background daemon.
         Args:
@@ -57,9 +58,9 @@ class SocketServer:
 
         if daemon:
             with self.context:
-                self.__start()
+                self.__startup()
         else:
-            self.__start()
+            self.__startup()
 
     def request(self, request):
         """
@@ -79,15 +80,17 @@ class SocketServer:
             response = client_socket.recv(1024)
         except socket.error as e:
             if e.errno == 111:
-                response = str("Can't connect to server.")
+                response = "Can't connect to server."
             else:
-                raise e
+                response = "Unknown Error [%s]: %s" % (type(e), e)
         finally:
             client_socket.close()
 
+        self.logger.debug("get response from server with %s" % response)
         return response
 
-    def stop(self):
+
+    def shutdown(self):
         """Send stop request to server."""
         self.logger.info("stopping server")
         return self.request(self.STOP_SOCKET_SERVER)
@@ -97,7 +100,7 @@ class SocketServer:
         self.logger.info("checking server")
         return self.request(self.CHECK_SOCKET_SERVER)
 
-    def test(self):
+    def ping(self):
         """
         Test if socket server is running.
         Returns:
@@ -112,26 +115,48 @@ class SocketServer:
 
     # functions in background daemon to response
 
-    def __start(self):
-        """Start socket server and listening request!"""
+    def __startup(self):
+        """call child's _startup() and make server listening"""
         self.logger.debug("server starting in background.")
 
-        self.logger.debug("calling child's _start()")
-        self._start()  # over write by child class
+        # try to call child's _startup()
+        try:
+            self.logger.debug("calling child's _startup()")
+            self._startup()
+        except Exception as e:
+            error_info = traceback.format_exc()
+            self.logger.error("call child's _startup() failed: %s. Type is: %s" % (e, type(e)))
+            self.logger.error("Traceback is %s" % error_info)
+            raise
+        else:
+            self.logger.debug("child's _startup() done")
 
+        self.__listen()
+
+    def _startup(self):
+        self.logger.debug("child class didn't overwrite this method.")
+
+    def __listen(self):
+        """Start socket server and listening request!"""
+
+        # get socket server
         self.logger.debug("init socket server")
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # how long to wait when restart.
         self.server_socket.bind((self.sock_host, self.sock_port))
         self.server_socket.listen(1)
 
+        # keep socket server listening
         self.logger.debug("socket server start listening")
         while self.listen:
             connection, address = self.server_socket.accept()
             request = connection.recv(1024)
 
+            self.logger.debug("send request %s to handler" % request)
             response = self.__handle(request)
+            self.logger.debug("get response %s from handler" % response)
             connection.send(response)
+            self.logger.debug("send response back to request.")
 
             if not self.listen:  # when stop keep listening.
                 connection.close()
@@ -155,23 +180,6 @@ class SocketServer:
         self.logger.debug("child sending response: %s." % response)
         return response
 
-    def __check(self):
-        """return server's status"""
-        self.logger.debug("server checking.")
-        return self.SERVER_IS_RUNNING
-
-    def __stop(self):
-        """Close server and return server's status."""
-        self.logger.debug("server stopping.")
-
-        self.logger.debug("calling child's _stop()")
-        self._stop()
-
-        self.listen = False
-        return self.STOPPING_SERVER
-
-    # functions for child classes to overwrite.
-
     def _handle(self, request):
         """
         Need be overwrite by child class.
@@ -184,8 +192,36 @@ class SocketServer:
         """
         return 'Parent Class is handling message.'
 
-    def _start(self):
+    def __check(self):
+        """return server's status"""
+        self.logger.debug("server checking.")
+        return self.SERVER_IS_RUNNING
+
+    def _check(self):
         self.logger.debug("child class didn't overwrite this method.")
 
-    def _stop(self):
+    def __shutdown(self):
+        """
+        Call child's _shutdown(), turn off server's listen condition to close server
+        Returns
+            str: response to user.
+        """
+        self.logger.debug("server stopping.")
+
+        # try to call child's _shutdown()
+        try:
+            self.logger.debug("calling child's _shutdown()")
+            self._shutdown()
+        except Exception as e:
+            error_info = traceback.format_exc()
+            self.logger.error("call child's _shutdown() failed: %s. Type is: %s" % (e, type(e)))
+            self.logger.error("Traceback is %s" % error_info)
+            return "Error when shutdown server."
+        else:
+            self.logger.debug("child's _shutdown() done")
+
+        self.listen = False
+        return self.STOPPING_SERVER
+
+    def _shutdown(self):
         self.logger.debug("child class didn't overwrite this method.")

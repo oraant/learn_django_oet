@@ -65,11 +65,11 @@ class Command(BaseCommand):
         """
 
         functions = {
-            'start': self.myss.start,
+            'start': self.myss.startup,
             'request': self.myss.request,
-            'stop': self.myss.stop,
+            'stop': self.myss.shutdown,
             'check': self.myss.check,
-            'test': self.myss.test
+            'test': self.myss.ping
         }
 
         actions = options['actions']

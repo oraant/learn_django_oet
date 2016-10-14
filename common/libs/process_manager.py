@@ -176,7 +176,7 @@ class ProcessManager:  # change to protect function to avoid children class over
             self.logger.debug('child process sending response: %s' % result)
             self.__child.send(result)
 
-    @__premise([CHILD_JOB_STOPPED])
+    @__premise([CHILD_PROCESS_OPENED, CHILD_JOB_STOPPED])
     def __close(self):
         self.logger.debug('child closing')
         self.__status = self.CHILD_PROCESS_CLOSED
@@ -200,11 +200,11 @@ class ProcessManager:  # change to protect function to avoid children class over
             self.logger.error("Child process start failed: %s. Type is: %s" % (e, type(e)))
             self.logger.error("Traceback is %s" % error_info)
             self.__status = self.CHILD_PROCESS_OPENED
+            return "Child process start failed, please check logfile."
         else:
             self.logger.debug("Child process start successfully")
             self.__status = self.CHILD_JOB_RUNNING
-
-        return "Child process start successfully"
+            return "Child process start successfully"
 
     @__premise([CHILD_JOB_RUNNING, CHILD_JOB_SUSPENDED])
     def __stop(self):

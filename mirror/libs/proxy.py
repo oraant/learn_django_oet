@@ -3,8 +3,6 @@ from mirror.libs.puller import Puller
 from mirror.libs.cacher import Cacher
 from mirror.libs.recorder import Recorder
 from mirror.libs import exceptions as exc
-import mirror.models as models
-#from apscheduler.schedulers.blocking import BlockingScheduler as Scheduler
 from apscheduler.schedulers.background import BackgroundScheduler as Scheduler
 from apscheduler.events import EVENT_JOB_ERROR
 
@@ -34,12 +32,12 @@ class Proxy(ProcessManager):
             Proxy will log it and end itself's job.
     """
 
-    def __init__(self, target, logger):
+    def __init__(self, target_name, logger):
         """
         Init instance with parameters.
 
         Args:
-            target (mirror.models.OracleTarget): target oracle want to mirror
+            target_name (str): target oracle's name you want to mirror
             logger (logging.Logger): handle output logs
         """
 
@@ -47,7 +45,7 @@ class Proxy(ProcessManager):
         ProcessManager.__init__(self)
 
         # init instance parameters
-        self.target = target
+        self.target_name = target_name
         self.logger = logger
         self.logger.debug('proxy prepared.')
 
@@ -57,11 +55,22 @@ class Proxy(ProcessManager):
         Get workers if they are all enabled and can be connect.
         """
 
+        import mirror.models as models
+        self.target = models.OracleTarget.objects.get(name=self.target_name)
         self.table_collection = getattr(models, self.target.table_collection).objects.all()
-        self.logger.debug("preparing table_collection %s done." % self.target.table_collection)
+        self.logger.debug(
+            "preparing oracle_target <%s> and table_collection <%s> done." % (
+                self.target_name,
+                self.target.table_collection
+            )
+        )
 
         self.scheduler = Scheduler()
         self.logger.debug("preparing scheduler done.")
+
+        self.logger.debug("---")  # todo : test for tmp
+        self.logger.debug(str(self.target.mysql_server))  # todo : test for tmp
+        self.logger.debug("---")  # todo : test for tmp
 
         try:  # init cacher
             self.cacher = Cacher(self.target.mysql_server, self.target.mysql_db)

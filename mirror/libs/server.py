@@ -1,10 +1,11 @@
 from mirror.libs.proxy import Proxy
 from common.libs.socket_server import SocketServer
-# from cloghandler import ConcurrentRotatingFileHandler as LogHandler  # won't use this
 from logging.handlers import RotatingFileHandler as LogHandler
 import logging
 import os
 from django.conf import settings
+from mirror.models import OracleTarget
+from django.db import connection
 
 
 class Server(SocketServer):
@@ -14,20 +15,17 @@ class Server(SocketServer):
         proxies (dict{str:Proxy}): a dict contains all proxy for every target.
     """
 
-    def __init__(self, global_config, oracle_targets):
+    # initial codes
+
+    def __init__(self, global_config):
         """
         Init socket server, overwrite it's logger and context, and prepare proxy for every oracle target.
         Args:
             global_config (mirror.models.GlobalConfig): global configs
-            oracle_targets (list[mirror.models.OracleTarget]): oracle targets
         """
 
         # init parent class's instance.
         SocketServer.__init__(self, global_config.sock_addr, global_config.sock_port)
-
-        # get proxies for every oracle target.  # todo : should be in _start() method, but oracle target will error.
-        self.proxies = [(target.name, Proxy(target, self.logger)) for target in oracle_targets]
-        self.proxies = dict(self.proxies)
 
         # list of opened and started proxy  # todo : should have reborn
         self.opened_proxies = set()
@@ -77,10 +75,20 @@ class Server(SocketServer):
 
         # get file descriptors for logger and Pipe connections in every proxy.
         preserves = [handler.stream for handler in self.logger.handlers]
-        for proxy in self.proxies.values():
-            preserves += proxy.filenos
+        # for proxy in self.proxies.values():
+        #    preserves += proxy.filenos
 
         self.context.files_preserve = preserves  # make sure logger can be used in daemon process.
+
+    # overwrite parent's method.
+
+    def _startup(self):
+        """Init proxies for every oracle target when startup server."""
+        connection.close()
+        oracle_targets = OracleTarget.objects.all()
+        target_names = [target.name for target in oracle_targets]
+        self.proxies = [(name, Proxy(name, self.logger)) for name in target_names]
+        self.proxies = dict(self.proxies)
 
     def _handle(self, request):
         """
@@ -97,9 +105,41 @@ class Server(SocketServer):
         targets = options['targets']
 
         response = [self.__call(target, action) for target in targets]
+        response = '\n'.join(response)
         return response
 
-    def __call(self, target, function):
+    def _shutdown(self):
+        """
+        Stop and close all proxies before shutdown.
+        """
+        for target in self.started_proxies:
+            self.__call(target, "stop", False)
+        self.started_proxies.clear()
+
+        for target in self.opened_proxies:
+            self.__call(target, "close", False)
+        self.opened_proxies.clear()
+
+    # internal method
+
+    def __record(self, target, function):
+        """
+        Record proxies's status
+        Args:
+            target (str): name of proxy
+            function (str): which function to call
+        """
+
+        operation = {
+            "open": self.opened_proxies.add,
+            "close": self.opened_proxies.remove,
+            "start": self.started_proxies.add,
+            "stop": self.started_proxies.remove,
+        }
+
+        operation.get(function)(target)
+
+    def __call(self, target, function, record=True):
         """
         Call proxy's function and get response.
         Args:
@@ -109,19 +149,14 @@ class Server(SocketServer):
             str: response
         """
 
-        self.logger.debug("calling %s's %s" % (target, function))
+        self.logger.debug("calling %s's %s with record=%s" % (target, function, record))
+
+        if record:
+            self.__record(target, function)
 
         proxy = self.proxies.get(target)
 
         # let server know the proxies's status
-        if function == "open":
-            self.opened_proxies.add(target)
-        elif function == "close":
-            self.opened_proxies.remove(target)
-        elif function == "start":
-            self.started_proxies.add(target)
-        elif function == "stop":
-            self.started_proxies.remove(target)
 
         operations = {
             "open": proxy.open,
@@ -134,10 +169,3 @@ class Server(SocketServer):
         }
 
         return operations.get(function)()
-
-    def _stop(self):
-        for target in self.started_proxies:
-            self.__call(target, "stop")
-
-        for target in self.opened_proxies:
-            self.__call(target, "close")
