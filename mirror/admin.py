@@ -38,7 +38,7 @@ class OracleTargetAdmin(admin.ModelAdmin):
 
 
 @admin.register(Ora11gR2)
-class TableSQLAdmin(admin.ModelAdmin):
+class TableSQLAdmin(admin.ModelAdmin):  # todo : restart proxy, it will effect.
 
     """Admin for TableCollections Models,Notice that TableCollections is an abstract base class."""
 
