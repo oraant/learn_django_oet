@@ -1,6 +1,7 @@
 from mirror.libs.exceptions import NotEnableError, MySQLConnectError, MySQLOperationError
 import MySQLdb
 import warnings
+from threading import Lock
 
 
 class Cacher:
@@ -49,6 +50,7 @@ class Cacher:
         self.db = dsn.prefix + db_name
         sql = "CREATE DATABASE IF NOT EXISTS %s DEFAULT CHARACTER SET utf8" % self.db
 
+        # try to create database to cache mirror data
         try:
             cursor.execute(sql)
         except MySQLdb.OperationalError as e:
@@ -58,6 +60,9 @@ class Cacher:
         else:
             cursor.close()
             self.connection.select_db(self.db)
+
+        # todo : test for tmp
+        self.mutex = Lock()
 
     @staticmethod
     def _ignore_warnings():
@@ -80,35 +85,41 @@ class Cacher:
             MySQLOperationError: sql statements have syntax,or doesn't compatibly with data.
         """
 
-        cursor = self.connection.cursor()  # this will not raise exceptions even the connection is closed.
+        if self.mutex.acquire(True):  # todo : do I need to lock Oracle and Redis like this?
+            cursor = self.connection.cursor()  # this will not raise exceptions even the connection is closed.
 
-        try:
-            a = 1  # todo : test for tmp
-            cursor.execute(table.create)
-            a = 2  # todo : test for tmp
-            cursor.execute(table.delete)
-            a = 3  # todo : test for tmp
-            cursor.executemany(table.insert, data)
-            a = 4  # todo : test for tmp
+            try:
+                a = 1  # todo : test for tmp
+                cursor.execute(table.create)
+                a = 2  # todo : test for tmp
+                cursor.execute(table.delete)
+                a = 3  # todo : test for tmp
+                cursor.executemany(table.insert, data)
+                a = 4  # todo : test for tmp
+                cursor.execute("commit")
+                a = 5  # todo : test for tmp
 
-        # maybe you want to generate a cursor after connection is closed.
-        except MySQLdb.InterfaceError as e:
-            raise MySQLConnectError("Error is: %e. Code is %d" % (e,a))
+            # maybe you want to generate a cursor after connection is closed.
+            except MySQLdb.InterfaceError as e:
+                raise MySQLConnectError("Error is: %s. Code is %d" % (e, a))
 
-        # MySQL server closed, or permission denied, or others.
-        except MySQLdb.OperationalError as e:
-            raise MySQLConnectError(e)
+            # MySQL server closed, or permission denied, or others.
+            except MySQLdb.OperationalError as e:
+                raise MySQLConnectError("Error is: %s. Code is %d. Table.create is: %s" % (e, a, table.create))
+                #raise MySQLConnectError(e)
 
-        # sql statements have syntax error.
-        except MySQLdb.ProgrammingError as e:
-            raise MySQLOperationError(e)
+            # sql statements have syntax error.
+            except MySQLdb.ProgrammingError as e:
+                raise MySQLOperationError(e)
 
-        # data columns's number is not equal to sql statements's values number.
-        except TypeError as e:
-            raise MySQLOperationError(e)
+            # data columns's number is not equal to sql statements's values number.
+            except TypeError as e:
+                raise MySQLOperationError(e)
 
-        finally:
-            cursor.close()
+            finally:
+                cursor.close()
+                self.mutex.release()
+
 
     def close(self):
         """
