@@ -137,7 +137,8 @@ class Server(SocketServer):
             "stop": self.started_proxies.remove,
         }
 
-        operation.get(function)(target)
+        if function in operation.keys():
+            operation.get(function)(target)
 
     def __call(self, target, function, record=True):
         """
@@ -168,4 +169,9 @@ class Server(SocketServer):
             "check": proxy.check,
         }
 
-        return operations.get(function)()
+        if function not in operations.keys():
+            return "Unkown action %s for target %s" % (function, target)
+
+        msg = operations.get(function)()
+
+        return msg
