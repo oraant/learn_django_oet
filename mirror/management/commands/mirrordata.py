@@ -1,7 +1,7 @@
 # coding:utf-8
 
 from django.core.management.base import BaseCommand, CommandParser
-from mirror.models import GlobalConfig, OracleTarget
+# from mirror.models import GlobalConfig, OracleTarget
 # from common.libs.socket_server import SocketServer
 from mirror.libs.server import Server
 
@@ -32,8 +32,7 @@ class Command(BaseCommand):
 
         # actions for arg parser.
         self.socket_server_actions = ['startup', 'shutdown', 'check', 'debug']
-        self.proxy_process_actions = ['open', 'close']
-        self.proxy_job_actions = ['start', 'stop', 'check', 'restart', 'reborn']
+        self.proxy_job_actions = ['start', 'stop', 'check']
 
         # target names can be choice.
         self.targets = [x.name for x in oracle_targets]
@@ -80,8 +79,8 @@ class Command(BaseCommand):
             '-a', '--action',
             metavar='ACTION',
             required=True,
-            choices=self.proxy_job_actions + self.proxy_process_actions,
-            help='Actions is: <%s>' % '|'.join(self.proxy_job_actions + self.proxy_process_actions),
+            choices=self.proxy_job_actions,
+            help='Actions is: <%s>' % self.proxy_job_actions
         )
         proxy.add_argument(
             '-t', '--targets',

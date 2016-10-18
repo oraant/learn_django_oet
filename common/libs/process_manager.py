@@ -1,334 +1,297 @@
 from multiprocessing import Process, Pipe
-from threading import Timer
 from logging import getLogger
-import traceback
-from traceback import format_exc
+from time import sleep
+from functools import partial
+
+# actions to send
+RUN_CHILD_JOB = 'RUN_CHILD_JOB'
+END_CHILD_JOB = 'END_CHILD_JOB'
+PING_CHILD_JOB = 'PING_CHILD_JOB'
+CLOSE_CHILD_PROCESS = 'CLOSE_CHILD_PROCESS'
+PING_CHILD_PROCESS = 'PING_CHILD_PROCESS'
 
 
-class ProcessManager:  # change to protect function to avoid children class overwrite it attributes.
+class ProcessManager:
     """
-    This class will create a child process and do the main jobs, and manage children with father's method.
-    This class fit with the situation when a man manager processes with command line.
-    Doesn't support multi-concurrence manage operations.
-
     Attributes:
-        __parent (_multiprocessing.Connection): socket connection use to talk with child process.
-        __child (_multiprocessing.Connection): socket connection use to talk with parent process.
-        filenos (list[int]): file descriptors list, keep pipe open when turn to daemon, set by server.
-
-        logger (logging.Logger): better be overwrite by child class.
-        reborn_time (int): how long to wait when reborn.
-
-        __status (str): parent and child process's status
-        __suspend_start_timer (threading.Timer): a timer to suspend start action.
-
-        cls.START_CHILD_JOB (str): request for start child process's job.
-        cls.STOP_CHILD_JOB (str): request for stop child process's job.
-        cls.CHECK_CHILD_JOB (str): request for check child process's job.
-        cls.RESTART_CHILD_JOB (str): request for restart child process's job.
-        cls.REBORN_CHILD_JOB (str): request for reborn child process's job.
-
-        cls.CHILD_JOB_STARTING (str): child process's job's status which means it's trying to start
-        cls.CHILD_JOB_RUNNING (str): child process's job's status which means it's running
-        cls.CHILD_JOB_STOPPING (str): child process's job's status which means it's trying to stop
-        cls.CHILD_JOB_STOPPED (str): child process's job's status which means it's stopped
-        cls.CHILD_JOB_SUSPENDED (str): child process's job's status which means it's hanging for reborn
-
-        cls.CLOSE_CHILD_PROCESS (str): request for close child's process
-
-        cls.PARENT_PROCESS_INITIAL (str): child process's stautus which means it's not been created yet.
-        cls.CHILD_PROCESS_OPENED (str): child process's stautus which means it's opened
-        cls.CHILD_PROCESS_CLOSED (str): child process's stautus which means it's closed
+        sender (PipeSender):
+        listener (PipeListener):
+        opened (bool):
+        process (Process):
     """
 
-    # actions for child's job
-    START_CHILD_JOB = 'START_CHILD_JOB'
-    STOP_CHILD_JOB = 'STOP_CHILD_JOB'
-    CHECK_CHILD_JOB = 'CHECK_CHILD_JOB'
-    RESTART_CHILD_JOB = 'RESTART_CHILD_JOB'
-    REBORN_CHILD_JOB = 'REBORN_CHILD_JOB'
+    def __init__(self, job, logger=getLogger(), check_time=100):  # todo : complete comments
+        """
+        Args:
+            job (MainJob):
+            logger (logging.Logger):
+            check_time (int):
+        """
 
-    # status for child's job
-    CHILD_JOB_STARTING = 'CHILD_JOB_STARTING'
-    CHILD_JOB_RUNNING = 'CHILD_JOB_RUNNING'
-    CHILD_JOB_STOPPING = 'CHILD_JOB_STOPPING'
-    CHILD_JOB_STOPPED = 'CHILD_JOB_STOPPED'
-    CHILD_JOB_SUSPENDED = 'CHILD_JOB_SUSPENDED'
+        self.job = job
+        self.logger = logger
+        self.check_time = check_time
 
-    # actions for child's process
-    CLOSE_CHILD_PROCESS = 'CLOSE_CHILD_PROCESS'
+        self.opened = False
 
-    # status for child's process
-    PARENT_PROCESS_INITIAL = 'PARENT_PROCESS_INITIAL'
-    CHILD_PROCESS_OPENED = 'CHILD_PROCESS_OPENED'
-    CHILD_PROCESS_CLOSED = 'CHILD_PROCESS_CLOSED'
+    # interface functions to call by others
 
-
-    def __init__(self):  # todo : better split different method in different class.
-        self.__parent, self.__child = Pipe()
-        self.filenos = [self.__parent.fileno(), self.__child.fileno()]
-
-        self.logger = getLogger()
-        self.reborn_time = 10
-
-        self.__status = self.PARENT_PROCESS_INITIAL  # use in father and child process with different value.
-
-        self.__suspend_start_timer = None
-
-    # decorator for father and child
-
-    def __premise(status):
-        def decorator(func):
-            def wrapper(self, *args, **kw):
-                if self.__status in status:
-                    return func(self, *args, **kw)
-                else:
-                    return "Error 0: Illegal Action:\n  Expect Status is: %s\n  Current Status is: %s." % (status, self.__status)
-            return wrapper
-        return decorator
-
-    # method for father process.
-
-    @__premise([PARENT_PROCESS_INITIAL])  # todo :should open when closed And add unit test.
-    def open(self):
-        """Create and start child's process."""
-        self.logger.info('opening child')
-        self.__status = self.CHILD_PROCESS_OPENED
-        process = Process(target=self.__listen)
-        process.start()
-        return 'child process generated'
-
-    @__premise([CHILD_PROCESS_OPENED])
-    def close(self):
-        """Send request to stop child's process."""
-        self.logger.info('closing child')
-        self.__status = self.CHILD_PROCESS_CLOSED
-        self.__parent.send(self.CLOSE_CHILD_PROCESS)
-        return self.__parent.recv()
-
-    @__premise([CHILD_PROCESS_OPENED])
     def start(self):
-        """Send request to start child's job."""
-        self.logger.info('starting child')
-        self.__parent.send(self.START_CHILD_JOB)
-        return self.__parent.recv()
+        return self.__run()
 
-    @__premise([CHILD_PROCESS_OPENED])
-    def stop(self):  # can't start after stopped  # what's this for?
-        """Send request to stop child's job."""
-        self.logger.info('stopping child')
-        self.__parent.send(self.STOP_CHILD_JOB)
-        return self.__parent.recv()
+    def stop(self):
+        return self.__close()
 
-    @__premise([CHILD_PROCESS_OPENED])
-    def restart(self):
-        """Send request to restart child's job."""
-        self.logger.info('restarting child')
-        self.__parent.send(self.RESTART_CHILD_JOB)
-        return self.__parent.recv()
+    def ping(self):
+        return self.__ping()
 
-    @__premise([CHILD_PROCESS_OPENED])
-    def reborn(self):
-        """Send request to reborn child's job."""
-        self.logger.info('reborning child')
-        self.__parent.send(self.REBORN_CHILD_JOB)
-        return self.__parent.recv()
+    def call(self, method):
+        """
+        Call method via string request.
+        Args:
+            method (str):
+        Returns:
+            bool:
+            str:
+        """
+        operations = {"start": self.start, "stop": self.stop, "ping": self.ping}
+        if method not in operations.keys():
+            return False, 'Unknown command.'
+        return operations.get(method)()
 
-    @__premise([CHILD_PROCESS_OPENED, CHILD_PROCESS_CLOSED])
-    def check(self):
-        """Send request to check child's job."""
-        self.logger.info('checking status of child')
-        self.__parent.send(self.CHECK_CHILD_JOB)
+    # internal functions to handle logic
 
-        if self.__parent.poll(0.1):
-            received = self.__parent.recv()
-            self.logger.info('received response when check child: %s' % received)
-            return received
+    def __open(self):
+        if self.opened:  # case1: has already opened
+            return False, 'Has already opened'
+        else:  # case2: never opened
+
+            parent_pipe, child_pipe = Pipe()
+            self.sender = PipeSender(parent_pipe, child_pipe, self.logger)
+            self.listener = PipeListener(child_pipe, self.job, self.logger)
+            self.process = Process(target=self.listener.listen)
+
+            self.opened = True
+            self.process.start()
+            return True, 'Process opened.'
+
+    def __close(self):
+        if not self.opened:  # case1: process closed or never opened
+            return False, 'already closed or never opened'
+
+        if self.sender.ping_job()[0]:  # case2: if job is running, close it first
+            result, msg = self.sender.end_job()
+            if not result:
+                return result, msg  # result1: close job failed
+
+        if self.sender.ping_process()[0]:  # case3: if process is running, close it
+            result, msg = self.sender.close_process()
+            if not result:
+                return result, msg  # result2: close process failed
+
+        self.process.join()
+        self.opened = False
+        return True, 'job stopped and process closed.'
+
+    def __run(self):
+        if not self.opened:  # case1: if process didn't open, open first.
+            self.__open()
+
+        if self.sender.ping_job()[0]:  # case2: process opened but child's job is already running.
+            return False, 'job is already running'
+
+        result, msg = self.sender.run_job()  # case3: process opened and child's job is not running
+        return result, msg
+
+    def __end(self):
+        if not self.opened:  # case1: process didn't open
+            return False, 'process did not open'
+
+        if not self.sender.ping_job()[0]:  # case2: process opened but job is not running.
+            return False, 'job is not running'
+
+        result, msg = self.sender.end_job()  # case3: process opened and job is running.
+        return result, msg
+
+    def __ping(self):
+        if not self.opened:  # case1: process didn't open
+            return False, 'process did not open'
+
+        if self.sender.ping_job()[0]:  # case2: process opened and job is running.
+            return True, 'job is running'
+
+        if self.sender.ping_process()[0]:  # case3: process opened but job is not running.
+            return False, 'job is not running'
+
+    def __watch(self):  # todo : do this with a new thread.
+
+        while True:
+            sleep(self.check_time)
+
+            if not self.opened:  # case1: process closed or never opened
+                continue
+
+            if not self.job.ping():  # case2: process opened and and job is not running
+                self.__close()
+                self.__run()
+
+
+class PipeSender:
+
+    def __init__(self, parent_pipe, child_pipe, logger):
+
+        self.parent_pipe = parent_pipe
+        self.child_pipe = child_pipe
+
+        self.logger = logger
+
+        self.run_job = partial(self.send, msg=RUN_CHILD_JOB)
+        self.end_job = partial(self.send, msg=END_CHILD_JOB)
+        self.ping_job = partial(self.send, msg=PING_CHILD_JOB, wait_time=1)
+        self.close_process = partial(self.send, msg=CLOSE_CHILD_PROCESS)
+        self.ping_process = partial(self.send, msg=PING_CHILD_PROCESS, wait_time=1)
+
+    def send(self, msg, wait_time=None):
+        self.logger.debug('[[ ParentPipe ]] >>> ( %s )' % msg)
+
+        self.parent_pipe.send(msg)
+
+        if not wait_time:
+            result, msg = self.parent_pipe.recv()
+        elif self.parent_pipe.poll(wait_time):
+            result, msg = self.parent_pipe.recv()
         else:
-            self.logger.info('can\'t receive response when check child')
-            return 'can not find child.'
+            result, msg = False, 'child process has no response.'
 
-    # method for child process.
+        self.logger.debug('[[ ParentPipe ]] <<< ( %s, %s )' % (result, msg))
+        return result, msg
 
-    def __listen(self):  # the main thread running in child process.
 
-        self.logger.debug('start listening')
+class PipeListener:
 
-        operations = {
-            self.START_CHILD_JOB: self.__start,
-            self.STOP_CHILD_JOB: self.__stop,
-            self.RESTART_CHILD_JOB: self.__restart,
-            self.CHECK_CHILD_JOB: self.__check,
-            self.REBORN_CHILD_JOB: self.__reborn,
-            self.CLOSE_CHILD_PROCESS: self.__close,
+    def __init__(self, pipe, job, logger):
+        self.pipe = pipe
+        self.job = job
+        self.logger = logger
+
+        self.keep_listen = True
+
+        self.operations = {
+            RUN_CHILD_JOB: self.run,
+            END_CHILD_JOB: self.end,
+            PING_CHILD_JOB: self.ping_job,
+            CLOSE_CHILD_PROCESS: self.close,
+            PING_CHILD_PROCESS: self.ping_process,
         }
 
-        # call methods with args or not, and respond methods' result.
-        while self.__status != self.CHILD_PROCESS_CLOSED:
-            self.logger.debug('keep listening')
+    def listen(self):  # the main thread running in child process.
 
-            msg = self.__child.recv()  # blocking and wait.
-            self.logger.debug('[[Parent Process]] >>> %s >>> [[Child Process]]' % msg)
+        while self.keep_listen:
+            self.logger.debug('process keep listening')
 
-            if msg in operations.keys():
-                result = operations.get(msg)()
-            else:
-                result = "Error 1: Invalid Command."
+            msg = self.pipe.recv()  # blocking and wait.
+            self.logger.debug('( %s ) >>> [[ Child Pipe ]]' % msg)
 
-            self.logger.debug('[[Parent Process]] <<< %s <<< [[Child Process]]' % result)
-            self.__child.send(result)
+            try:
+                if msg in self.operations.keys():
+                    result, msg = self.operations.get(msg)()
+                else:
+                    result, msg = False, "Invalid Command."
+            except Exception as e:
+                self.logger.error(e)
+
+            self.logger.debug('( %s, %s ) <<< [[ Child Pipe ]]' % (result, msg))
+            self.pipe.send([result, msg])
 
     # logic method, must return str and handle __status
 
-    @__premise([CHILD_JOB_STOPPED])
-    def __close(self):
+    def close(self):
         """
         Stop child's process by change status
         Returns:
             str: close successfully or failed.
         """
-        self.logger.debug('child closing')
+        self.logger.debug('process closing')
+        self.keep_listen = False
+        return True, 'child process is closed.'
 
-        self.__status = self.CHILD_PROCESS_CLOSED
-
-        return 'child process is closed.'
-
-    @__premise([CHILD_PROCESS_OPENED, CHILD_JOB_STOPPED, CHILD_JOB_SUSPENDED])
-    def __start(self):
+    def ping_process(self):
         """
-        Starting child process's main job by calling _start().
-        Notes:
-            This won't block code.
-            This will cancel suspended.
+        Check child process's job's status
         Returns:
-            str: stop successfully or failed.
+            bool:
         """
+        self.logger.debug('process pong')
+        return True, 'child process is running.'
 
-        self.logger.debug('child starting')
-
-        if self.__status == self.CHILD_JOB_SUSPENDED:
-            self.__cancel()
-
-        # try to call _start()
+    def run(self):
         try:
-            self.__status = self.CHILD_JOB_STARTING
-            self._start_background_thread()
-
+            result, msg = self.job.run()
+        except TypeError:
+            result, msg = True, 'Job run successfully -- maybe.'
         except Exception as e:
-            self.__status = self.CHILD_PROCESS_OPENED
-            self.logger.error("[%s]:%s\n Traceback is: %s" % (e, type(e), format_exc()))
-            return "Error 2: Child process start failed, please check logfile."
+            result, msg = False, 'Unknown Error when ping job, please check log file.'
+            self.logger("[%s] - %s" % (type(e), e))
 
-        else:
-            self.__status = self.CHILD_JOB_RUNNING
-            return "Child process start successfully"
+        return result, msg
 
-    @__premise([CHILD_JOB_RUNNING, CHILD_JOB_SUSPENDED])
-    def __stop(self):
-        """
-        Stopping child process's main job by calling _stop().This will block code for a well.
-        Notes:
-            If it's suspending, then just cancel it.
-        Returns:
-            str: stop successfully or failed.
-        """
-
-        self.logger.debug('child stopping')
-
-        if self.__status == self.CHILD_JOB_SUSPENDED:
-            self.__cancel()
-            self.__status = self.CHILD_JOB_STOPPED
-            return "Child process's job was suspending, now canceled."
-
+    def end(self):
         try:
-            self.__status = self.CHILD_JOB_STOPPING
-            self._stop_with_waiting()
+            result, msg = self.job.end()
+        except TypeError:
+            result, msg = True, 'Job end successfully -- maybe.'
         except Exception as e:
-            self.__status = self.CHILD_JOB_RUNNING
-            self.logger.error("[%s]:%s\n Traceback is: %s" % (e, type(e), format_exc()))
-            return "Error 3: Child process stop failed, please check logfile."
-        else:
-            self.__status = self.CHILD_JOB_STOPPED
-            return "Child process's job stopped."
+            result, msg = False, 'Unknown Error when ping job, please check log file.'
+            self.logger("[%s] - %s" % (type(e), e))
+        return result, msg
 
-    @__premise([CHILD_JOB_RUNNING, CHILD_JOB_STOPPED, CHILD_JOB_SUSPENDED])
-    def __restart(self):
+    def ping_job(self):
+        try:
+            result, msg = self.job.ping()
+        except TypeError:
+            result, msg = False, 'can check status of job. job.ping() function did not return right value.'
+        except Exception as e:
+            result, msg = False, 'Unknown Error when ping job, please check log file.'
+            self.logger("[%s] - %s" % (type(e), e))
+
+        return result, msg
+
+
+class MainJob:
+
+    def __init__(self, logger=getLogger()):
+        self.logger = logger
+
+    def run(self):
         """
-        Restart the child process's main job by calling _stop(True) and _start().
-        Returns:
-            str: restart successfully or failed.
-        """
-
-        self.logger.debug('child restarting')
-
-        if self.__status == self.CHILD_JOB_RUNNING:  # restart job
-            self.__stop()
-        self.__start()
-
-        return "Child process's job is not running.Trying to start it."
-
-    @__premise([CHILD_JOB_RUNNING, CHILD_JOB_STOPPED, CHILD_JOB_SUSPENDED])
-    def __reborn(self):
-        """
-        Reborn the child process's main job.
         Notes:
-            This stop child's job if it's running
+            Start a new thread to run main job.
+            Never blocking! Run the thread at background.
         Returns:
-            str: reborn successfully or failed.
+            bool: run successful or not
+            str:
         """
+        self.logger.debug('empty job started')
+        return True, 'job is empty.'
 
-        self.logger.debug('child reborning')
-
-        if self.__status == self.CHILD_JOB_RUNNING:
-            self.__stop()
-
-        self.__suspend()
-        self.__status = self.CHILD_JOB_SUSPENDED
-
-        return "Child job suspending for start"
-
-    # basic method for logic method, des not return things or handle status.
-
-    def __suspend(self):
+    def end(self):
         """
-        Wait time seconds and call __start()
         Notes:
-            if there have one before, then cancel it first.
-        Args:
-            time: how many seconds to wait.
-        """
-
-        if self.__suspend_start_timer:
-            self.__suspend_start_timer.cancel()
-
-        self.logger.debug("child suspending")
-        self.__suspend_start_timer = Timer(self.reborn_time, self.__start)
-        self.__suspend_start_timer.start()
-        self.logger.debug("child suspended")
-
-    def __cancel(self):
-        """Cancel the suspend timer."""
-
-        self.logger.debug("child canceling suspend")
-        self.__suspend_start_timer.cancel()
-        self.__suspend_start_timer = None
-
-    def __check(self):
-        """
-        Check child process's status
+            End the job thread.
+            Need blocking! When this method done, make sure all job has stopped.
         Returns:
-            str: the status of child's process
+            bool: terminated successful or not
+            str:
         """
-        self.logger.debug('child checking')
-        msg = "Child process's job status is %s. " % self.__status
-        return msg
+        self.logger.debug('empty job stopped')
+        return True, 'job is empty.'
 
-    # method for subclass
-
-    def _start_background_thread(self):
-        """Children Class's code here, Make sure do works in background thread."""
-        pass
-
-    def _stop_with_waiting(self):
-        """Children Class's code here, Make sure when this method done, works are done."""
-        pass
+    def ping(self):
+        """
+        Check if child's job is running.
+        Returns:
+            bool: if child's job is running.
+            str:
+        """
+        self.logger.debug('empty job pong')
+        return True, 'job is empty.'

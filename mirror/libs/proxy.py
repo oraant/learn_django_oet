@@ -1,4 +1,4 @@
-from common.libs.process_manager import ProcessManager
+from common.libs.process_manager import MainJob
 from mirror.libs.puller import Puller
 from mirror.libs.cacher import Cacher
 from mirror.libs.recorder import Recorder
@@ -12,7 +12,7 @@ from apscheduler.events import EVENT_JOB_ERROR
 # todo : how long to wait if there are some error.
 
 
-class Proxy(ProcessManager):
+class Proxy(MainJob):
     """
     Proxy to handle the main mirror job for a oracle database.
 
@@ -42,12 +42,12 @@ class Proxy(ProcessManager):
         """
 
         # init parent things.
-        ProcessManager.__init__(self)
+        MainJob.__init__(self, logger)
 
         # init instance parameters
         self.target_name = target_name
-        self.logger = logger
-        self.logger.debug('proxy prepared.')
+        self.logger.debug('proxy init done.')
+
 
     def __prepare(self):
         """
@@ -67,10 +67,6 @@ class Proxy(ProcessManager):
 
         self.scheduler = Scheduler()
         self.logger.debug("preparing scheduler done.")
-
-        self.logger.debug("---")  # todo : test for tmp
-        self.logger.debug(str(self.target.mysql_server))  # todo : test for tmp
-        self.logger.debug("---")  # todo : test for tmp
 
         try:  # init cacher
             self.cacher = Cacher(self.target.mysql_server, self.target.mysql_db)
@@ -158,16 +154,25 @@ class Proxy(ProcessManager):
             raise event.exception
         except Exception as e:
             self.logger.error(e)
-            pass
 
     # overwrite father's method
 
-    def _start_background_thread(self):
+    def run(self):
         """start scheduler in background thread."""
         self.__prepare()
         self.__schedule()
 
-    def _stop_with_waiting(self):
-        """stop scheduler in background thread"""
+    def end(self):
+        """stop scheduler, wait until all thread stopped."""
         self.scheduler.shutdown()
         self.__close_workers()
+
+    def ping(self):
+        """check job is running or not"""
+        try:
+            if self.scheduler.running:
+                return True, 'job is running'
+            else:
+                return False, 'job is not running'
+        except AttributeError:
+            return False, 'job never run before'
