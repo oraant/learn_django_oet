@@ -149,15 +149,9 @@ class Server(SocketServer):
         Returns:
             str: response
         """
-
         self.logger.debug("calling %s's %s with record=%s" % (target, function, record))
 
-        if record:
-            self.__record(target, function)
-
         proxy = self.proxies.get(target)
-
-        # let server know the proxies's status
 
         operations = {
             "open": proxy.open,
@@ -170,8 +164,10 @@ class Server(SocketServer):
         }
 
         if function not in operations.keys():
-            return "Unkown action %s for target %s" % (function, target)
+            return "Unknown action %s for target %s" % (function, target)
 
         msg = operations.get(function)()
+        if record and'Error' not in msg:  # let server know the proxies's status
+            self.__record(target, function)
 
         return msg
