@@ -174,7 +174,7 @@ class PipeSender:
 
         self.run_job = partial(self.send, msg=RUN_CHILD_JOB)
         self.end_job = partial(self.send, msg=END_CHILD_JOB)
-        self.ping_job = partial(self.send, msg=PING_CHILD_JOB, wait_time=1)
+        self.ping_job = partial(self.send, msg=PING_CHILD_JOB, wait_time=3)
         self.close_process = partial(self.send, msg=CLOSE_CHILD_PROCESS)
         self.ping_process = partial(self.send, msg=PING_CHILD_PROCESS, wait_time=1)
 
