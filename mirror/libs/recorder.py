@@ -22,6 +22,7 @@ class Recorder:
         Raises:
             NotEnableError:  The dsn is configured as not enable.
             RedisConnectError: Can't connect to Redis Server.
+            Exception: Interval Unknown error.
         """
 
         # make sure dsn is enabled
@@ -53,6 +54,7 @@ class Recorder:
         Raises:
             RedisConnectError: can't connect to server or record failed.
             RedisOperationError: set value failed.
+            Exception: Interval Unknown error.
         """
 
         expired = int(seconds * 1.5)

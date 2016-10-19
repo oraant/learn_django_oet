@@ -28,6 +28,7 @@ class Cacher:
         Raises:
             NotEnableError: The dsn is configured as not enable.
             MySQLConnectError: Can't connect to MySQL Server with the dsn or can't create new databases.
+            Exception: Interval Unknown error.
         """
 
         # ignore special warnings for now and further calling of functions.
@@ -83,6 +84,7 @@ class Cacher:
         Raises:
             MySQLConnectError: cursor can't connect to server,or permission denied, or others.
             MySQLOperationError: sql statements have syntax,or doesn't compatibly with data.
+            Exception: Interval Unknown error.
         """
 
         if self.mutex.acquire(True):  # todo : do I need to lock Oracle and Redis like this?
@@ -120,13 +122,14 @@ class Cacher:
                 cursor.close()
                 self.mutex.release()
 
-
     def close(self):
         """
         Close self.connection. Calling close() more than once is allowed.
 
         Returns:
             str: result status of closing connection.
+        Raises:
+            Exception: Interval Unknown error.
         """
 
         try:

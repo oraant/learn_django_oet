@@ -24,6 +24,7 @@ class Puller(object):
         Raises:
             NotEnableError: The dsn is configured as not enable.
             ORACLEConnectError: Can't connect to target oracle database with this dsn.
+            Exception: Interval Unknown error.
         """
 
         # get dsn for connection
@@ -38,23 +39,6 @@ class Puller(object):
         except (cx_Oracle.InterfaceError, cx_Oracle.DatabaseError) as e:
             raise ORACLEConnectError("Error: %s. DSN: %s" % (e, dsn.dns()))
 
-    def close(self):
-        """
-        Disconnect from target database. Calling close() more than once is allowed.
-
-        Returns:
-            str: result status of closing connection.
-        """
-
-        try:
-            self.connection.close()
-        except cx_Oracle.InterfaceError as e:
-            msg = "Puller to %s has been closed with nothing opening.Msg is %s" % (self.dsn.name, e)
-        else:
-            msg = "Puller to %s has been closed." % self.dsn.name
-
-        return msg
-
     def pull(self, table):
         """
         Pull data from target database with generating a cursor and executing the pull sql of table arg.
@@ -65,6 +49,7 @@ class Puller(object):
         Raises:
             ORACLEConnectError: get cursor from connection failed.Maybe
             ORACLEOperationError: cursor can't execute sql statements.
+            Exception: Interval Unknown error.
 
         Returns:
             list[tuple]: All data pulled from target table.
@@ -87,3 +72,23 @@ class Puller(object):
             return cursor.fetchall()
         finally:
             cursor.close()
+
+    def close(self):
+        """
+        Disconnect from target database. Calling close() more than once is allowed.
+
+        Returns:
+            str: result status of closing connection.
+
+        Raises:
+            Exception: Interval Unknown error.
+        """
+
+        try:
+            self.connection.close()
+        except cx_Oracle.InterfaceError as e:
+            msg = "Puller to %s has been closed with nothing opening.Msg is %s" % (self.dsn.name, e)
+        else:
+            msg = "Puller to %s has been closed." % self.dsn.name
+
+        return msg

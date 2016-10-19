@@ -1,7 +1,7 @@
 from multiprocessing import Process, Pipe
 from logging import getLogger
-from time import sleep
 from functools import partial
+from threading import Thread, Lock, Event
 
 # actions to send
 RUN_CHILD_JOB = 'RUN_CHILD_JOB'
@@ -18,9 +18,11 @@ class ProcessManager:
         listener (PipeListener):
         opened (bool):
         process (Process):
+        mutex (thread.lock):
+        closed (Event):
     """
 
-    def __init__(self, job, logger=getLogger(), check_time=100):  # todo : complete comments
+    def __init__(self, job, logger=getLogger(), check_time=20):  # todo : complete comments
         """
         Args:
             job (MainJob):
@@ -33,17 +35,28 @@ class ProcessManager:
         self.check_time = check_time
 
         self.opened = False
+        self.mutex = Lock()
+        self.closed = Event()
 
     # interface functions to call by others
 
     def start(self):
-        return self.__run()
+        if self.mutex.acquire(True):
+            result, msg = self.__run()
+            self.mutex.release()
+            return result, msg
 
     def stop(self):
-        return self.__close()
+        if self.mutex.acquire(True):
+            result, msg = self.__close()
+            self.mutex.release()
+            return result, msg
 
     def ping(self):
-        return self.__ping()
+        if self.mutex.acquire(True):
+            result, msg = self.__ping()
+            self.mutex.release()
+            return result, msg
 
     def call(self, method):
         """
@@ -91,6 +104,7 @@ class ProcessManager:
 
         self.process.join()
         self.opened = False
+        self.closed.set()
         return True, 'job stopped and process closed.'
 
     def __run(self):
@@ -101,6 +115,10 @@ class ProcessManager:
             return False, 'job is already running'
 
         result, msg = self.sender.run_job()  # case3: process opened and child's job is not running
+
+        if result:  # result1: if run job successfully.
+            Thread(target=self.__watch).start()
+
         return result, msg
 
     def __end(self):
@@ -123,17 +141,26 @@ class ProcessManager:
         if self.sender.ping_process()[0]:  # case3: process opened but job is not running.
             return False, 'job is not running'
 
-    def __watch(self):  # todo : do this with a new thread.
+    def __watch(self):
 
         while True:
-            sleep(self.check_time)
 
-            if not self.opened:  # case1: process closed or never opened
+            if self.closed.wait(self.check_time):  # case2: if process closed, end the watch thread.
+                self.closed.clear()
+                break
+
+            if not self.mutex.acquire(False):  # case1: if mutex has been locked, do nothing
                 continue
 
-            if not self.job.ping():  # case2: process opened and and job is not running
-                self.__close()
-                self.__run()
+            if self.sender.ping_job()[0]:  # case3: process opened and and job is running
+                self.logger.debug('check Job every %ds: job is running healthily.' % self.check_time)
+                self.mutex.release()
+                continue
+
+            self.logger.debug('check Job every %ds: job is not running! Trying rerun job.' % self.check_time)
+            self.__close()  # case4: process opened and and job is not running
+            self.__run()
+            self.mutex.release()
 
 
 class PipeSender:
@@ -152,7 +179,7 @@ class PipeSender:
         self.ping_process = partial(self.send, msg=PING_CHILD_PROCESS, wait_time=1)
 
     def send(self, msg, wait_time=None):
-        self.logger.debug('[[ ParentPipe ]] >>> ( %s )' % msg)
+        self.logger.debug('[[ ParentPipe ]] >>> ( %s ) >>> [[ ---------- ]]' % msg)
 
         self.parent_pipe.send(msg)
 
@@ -163,7 +190,7 @@ class PipeSender:
         else:
             result, msg = False, 'child process has no response.'
 
-        self.logger.debug('[[ ParentPipe ]] <<< ( %s, %s )' % (result, msg))
+        self.logger.debug('[[ ParentPipe ]] <<< ( %s, %s ) <<< [[ ---------- ]]' % (result, msg))
         return result, msg
 
 
@@ -190,7 +217,7 @@ class PipeListener:
             self.logger.debug('process keep listening')
 
             msg = self.pipe.recv()  # blocking and wait.
-            self.logger.debug('( %s ) >>> [[ Child Pipe ]]' % msg)
+            self.logger.debug('[[ ---------- ]] >>> ( %s ) >>> [[ Child Pipe ]]' % msg)
 
             try:
                 if msg in self.operations.keys():
@@ -198,9 +225,9 @@ class PipeListener:
                 else:
                     result, msg = False, "Invalid Command."
             except Exception as e:
-                self.logger.error(e)
+                self.logger.error('[%s] - %s' % (type(e), e))
 
-            self.logger.debug('( %s, %s ) <<< [[ Child Pipe ]]' % (result, msg))
+            self.logger.debug('[[ ---------- ]] <<< ( %s, %s ) <<< [[ Child Pipe ]]' % (result, msg))
             self.pipe.send([result, msg])
 
     # logic method, must return str and handle __status
@@ -224,6 +251,8 @@ class PipeListener:
         self.logger.debug('process pong')
         return True, 'child process is running.'
 
+    # call job's functions
+
     def run(self):
         try:
             result, msg = self.job.run()
@@ -231,7 +260,7 @@ class PipeListener:
             result, msg = True, 'Job run successfully -- maybe.'
         except Exception as e:
             result, msg = False, 'Unknown Error when ping job, please check log file.'
-            self.logger("[%s] - %s" % (type(e), e))
+            self.logger.error("[%s] - %s" % (type(e), e))
 
         return result, msg
 
@@ -242,7 +271,8 @@ class PipeListener:
             result, msg = True, 'Job end successfully -- maybe.'
         except Exception as e:
             result, msg = False, 'Unknown Error when ping job, please check log file.'
-            self.logger("[%s] - %s" % (type(e), e))
+            self.logger.error("[%s] - %s" % (type(e), e))
+
         return result, msg
 
     def ping_job(self):
@@ -252,7 +282,7 @@ class PipeListener:
             result, msg = False, 'can check status of job. job.ping() function did not return right value.'
         except Exception as e:
             result, msg = False, 'Unknown Error when ping job, please check log file.'
-            self.logger("[%s] - %s" % (type(e), e))
+            self.logger.error("[%s] - %s" % (type(e), e))
 
         return result, msg
 

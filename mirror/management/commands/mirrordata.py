@@ -6,10 +6,9 @@ from django.core.management.base import BaseCommand, CommandParser
 from mirror.libs.server import Server
 
 # complete this with daemon and socket server.
-#  todo : check every function, if need return, replace raise with return
 
 
-class Command(BaseCommand):
+class Command(BaseCommand):  # todo : chinese support
 
     help = "Start or stop mirroring data from Target Oracle Database."
 
@@ -32,7 +31,7 @@ class Command(BaseCommand):
 
         # actions for arg parser.
         self.socket_server_actions = ['startup', 'shutdown', 'check', 'debug']
-        self.proxy_job_actions = ['start', 'stop', 'check']
+        self.proxy_job_actions = ['start', 'stop', 'ping']
 
         # target names can be choice.
         self.targets = [x.name for x in oracle_targets]
@@ -44,9 +43,7 @@ class Command(BaseCommand):
             parser (CommandParser): parser arg from father function.
         """
 
-        # make sure we can use sub parser in django. via stack_overflow
-
-        cmd = self
+        cmd = self  # make sure we can use sub parser in django. via stack_overflow
 
         class SubParser(CommandParser):
             """Use to avoid the error when using sub parser in django's add_arguments method."""
@@ -80,7 +77,7 @@ class Command(BaseCommand):
             metavar='ACTION',
             required=True,
             choices=self.proxy_job_actions,
-            help='Actions is: <%s>' % self.proxy_job_actions
+            help='Actions is: <%s>' % '|'.join(self.proxy_job_actions)
         )
         proxy.add_argument(
             '-t', '--targets',
