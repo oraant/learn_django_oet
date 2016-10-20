@@ -38,7 +38,17 @@ class Recorder:
         try:
             self.connection = redis.Redis(host=dsn.host, port=dsn.port, password=dsn.password, db=db_number)
         except (redis.ResponseError, redis.AuthenticationError) as e:
-            raise RedisConnectError(e)
+            raise RedisConnectError(str(e))
+
+        # test connection
+        try:
+            result = self.connection.ping()
+        except Exception as e:
+            raise RedisConnectError('connection did not established')
+
+        # test ping
+        if not result:
+            raise RedisConnectError('connection established but can not ping')
 
     def record(self, name, seconds):
         """
@@ -61,8 +71,8 @@ class Recorder:
 
         try:
             result = self.connection.set(name, True, expired)
-        except (redis.ResponseError, redis.Connection) as e:
-            raise RedisConnectError(e)
+        except (redis.ResponseError, redis.ConnectionError) as e:
+            raise RedisConnectError(str(e))
 
         if not result:
             raise RedisOperationError("Set value into Redis failed. DB=%s, Key=%s." % (self.db_number, name))

@@ -44,7 +44,7 @@ class Cacher:
         try:
             self.connection = MySQLdb.connect(host=dsn.host, user=dsn.user, passwd=dsn.password, port=dsn.port)
         except MySQLdb.OperationalError as e:
-            raise MySQLConnectError(e)
+            raise MySQLConnectError(str(e))
 
         # format the database name, then create and connect to it.
         cursor = self.connection.cursor()
@@ -57,7 +57,7 @@ class Cacher:
         except MySQLdb.OperationalError as e:
             cursor.close()
             self.connection.close()
-            raise MySQLConnectError(e)
+            raise MySQLConnectError(str(e))
         else:
             cursor.close()
             self.connection.select_db(self.db)
@@ -103,20 +103,19 @@ class Cacher:
 
             # maybe you want to generate a cursor after connection is closed.
             except MySQLdb.InterfaceError as e:
-                raise MySQLConnectError("Error is: %s. Code is %d" % (e, a))
+                raise MySQLConnectError(str(e))
 
             # MySQL server closed, or permission denied, or others.
             except MySQLdb.OperationalError as e:
-                raise MySQLConnectError("Error is: %s. Code is %d. Table.create is: %s" % (e, a, table.create))
-                #raise MySQLConnectError(e)
+                raise MySQLConnectError(str(e))
 
             # sql statements have syntax error.
             except MySQLdb.ProgrammingError as e:
-                raise MySQLOperationError(e)
+                raise MySQLOperationError(str(e))
 
             # data columns's number is not equal to sql statements's values number.
             except TypeError as e:
-                raise MySQLOperationError(e)
+                raise MySQLOperationError(str(e))
 
             finally:
                 cursor.close()

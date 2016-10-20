@@ -107,7 +107,7 @@ class ProcessManager:
         self.closed.set()
         return True, 'job stopped and process closed.'
 
-    def __run(self):
+    def __run(self, keep_try=False):
         if not self.opened:  # case1: if process didn't open, open first.
             self.__open()
 
@@ -116,7 +116,8 @@ class ProcessManager:
 
         result, msg = self.sender.run_job()  # case3: process opened and child's job is not running
 
-        if result:  # result1: if run job successfully.
+        if result or keep_try:  # result1: if run job successfully, or need keep try to start when watching.
+            self.closed.clear()
             Thread(target=self.__watch).start()
 
         return result, msg
@@ -146,7 +147,6 @@ class ProcessManager:
         while True:
 
             if self.closed.wait(self.check_time):  # case2: if process closed, end the watch thread.
-                self.closed.clear()
                 break
 
             if not self.mutex.acquire(False):  # case1: if mutex has been locked, do nothing
@@ -159,7 +159,7 @@ class ProcessManager:
 
             self.logger.debug('check Job every %ds: job is not running! Trying rerun job.' % self.check_time)
             self.__close()  # case4: process opened and and job is not running
-            self.__run()
+            self.__run(True)
             self.mutex.release()
 
 

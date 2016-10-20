@@ -60,14 +60,14 @@ class Puller(object):
         try:
             cursor = self.connection.cursor()
         except cx_Oracle.InterfaceError as e:
-            raise ORACLEConnectError(e)
+            raise ORACLEConnectError(str(e))
 
         # execute sql statement to get data, and close cursor finally.
         # todo: sql maybe hanged because of network error or server overload.Stop it and raise error for interval run.
         try:
             cursor.execute(table.pull)
         except cx_Oracle.DatabaseError as e:
-            raise ORACLEOperationError(e)
+            raise ORACLEOperationError(str(e))
         else:
             return cursor.fetchall()
         finally:
