@@ -75,7 +75,7 @@ class ProcessManager:
             return False, 'Unknown command.'
         return operations.get(method)()
 
-    # internal functions to handle logic
+    # internal functions to handle logic  # todo : change to start and stop function
 
     def __open(self):
         if self.opened:  # case1: has already opened
@@ -119,9 +119,15 @@ class ProcessManager:
 
         result, msg = self.sender.run_job()  # case3: process opened and child's job is not running
 
-        if result or keep_try:  # result1: if run job successfully, or need keep try to start when watching.
+        if result or keep_try:  # result1: if run job successfully, or need watching the healthy.
             self.closed.clear()
             Thread(target=self.__watch).start()
+        else:  # result2: if start failed and doesn't need watching.
+            tmp_result, tmp_msg = self.sender.close_process()
+            if tmp_result:  # stop process successfully
+                self.process.join()
+            else:
+                msg = '%s\n%s' % (msg, tmp_msg)
 
         return result, msg
 

@@ -179,7 +179,7 @@ class Proxy(MainJob):
         self.cacher.cache(table, data)
         self.recorder.record(str(table.name), table.period.seconds)
 
-    def __listener(self, event):  # todo : complete this.
+    def __listener(self, event):
 
         try:
             raise event.exception

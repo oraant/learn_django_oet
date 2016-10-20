@@ -38,7 +38,6 @@ class Server(SocketServer):
         self.check_time = global_config.reborn.seconds
 
         # todo : concurrent process config
-        # todo : how long to wait when proxy have error and job stopped.
 
     def __set_logger(self, config):  # todo : processes's number better less than 50
         """
@@ -114,7 +113,7 @@ class Server(SocketServer):
         for target in targets:
             proxy_manager = self.proxy_managers.get(target)
             result, msg = proxy_manager.call(action)
-            response.append('[%s] - %s' % (result, msg))
+            response.append('Target <%s>: [%s] - %s' % (target, result, msg))
 
         return '\n'.join(response)
 
