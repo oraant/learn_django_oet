@@ -8,11 +8,6 @@ from apscheduler.events import EVENT_JOB_ERROR
 from threading import Lock
 
 
-# todo : concurrent process config
-# todo : sock file path
-# todo : how long to wait if there are some error.
-
-
 class Proxy(MainJob):
     """
     Proxy to handle the main mirror job for a oracle database.

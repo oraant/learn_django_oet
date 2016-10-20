@@ -14,11 +14,12 @@ class Server(SocketServer):
     Receive request from user, and manage proxy for every oracle target.
     Attributes:
         proxy_managers (dict{str:ProcessManager}): a dict contains all proxy for every target.
+        check_time (int):
     """
 
     # initial codes
 
-    def __init__(self, global_config):
+    def __init__(self, global_config):  # todo : config and oracle targets, receive or import by it self.
         """
         Init socket server, overwrite it's logger and context, and prepare proxy for every oracle target.
         Args:
@@ -34,6 +35,10 @@ class Server(SocketServer):
 
         # global variables
         self.proxy_managers = {}
+        self.check_time = global_config.reborn.seconds
+
+        # todo : concurrent process config
+        # todo : how long to wait when proxy have error and job stopped.
 
     def __set_logger(self, config):  # todo : processes's number better less than 50
         """
@@ -80,7 +85,7 @@ class Server(SocketServer):
 
     # overwrite parent's method.
 
-    def _startup(self):
+    def _startup(self):  # todo : handle exception.
         """Init proxies for every oracle target when startup server."""
         connection.close()
         oracle_targets = OracleTarget.objects.all()
@@ -88,7 +93,7 @@ class Server(SocketServer):
 
         for name in target_names:
             proxy = Proxy(name, self.logger)
-            proxy_manager = ProcessManager(proxy, self.logger)
+            proxy_manager = ProcessManager(proxy, self.logger, self.check_time)
             self.proxy_managers[name] = proxy_manager
 
     def _handle(self, request):
