@@ -39,6 +39,7 @@ class Proxy(MainJob):
 
         # init parent things.
         MainJob.__init__(self, logger)
+        self.name = "<Mirror %s's table>" % target_name
 
         # init instance parameters
         self.target_name = target_name

@@ -42,18 +42,21 @@ class ProcessManager:
 
     def start(self):
         if self.mutex.acquire(True):
+            self.logger.info('starting job: %s' % self.job.name)
             result, msg = self.__run()
             self.mutex.release()
             return result, msg
 
     def stop(self):
         if self.mutex.acquire(True):
+            self.logger.info('stopping job: %s' % self.job.name)
             result, msg = self.__close()
             self.mutex.release()
             return result, msg
 
     def ping(self):
         if self.mutex.acquire(True):
+            self.logger.info('checking job: %s' % self.job.name)
             result, msg = self.__ping()
             self.mutex.release()
             return result, msg
@@ -157,7 +160,7 @@ class ProcessManager:
                 self.mutex.release()
                 continue
 
-            self.logger.debug('check Job every %ds: job is not running! Trying rerun job.' % self.check_time)
+            self.logger.warn('check Job every %ds: job is not running! Trying rerun job.' % self.check_time)
             self.__close()  # case4: process opened and and job is not running
             self.__run(True)
             self.mutex.release()
@@ -291,6 +294,7 @@ class MainJob:
 
     def __init__(self, logger=getLogger()):
         self.logger = logger
+        self.name = 'Job'
 
     def run(self):
         """
@@ -324,4 +328,4 @@ class MainJob:
             str:
         """
         self.logger.debug('empty job pong')
-        return True, 'job is empty.'
+        return False, 'job is empty.'
