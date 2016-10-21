@@ -1,6 +1,6 @@
 from mirror.libs.proxy import Proxy
 from common.libs.socket_server import SocketServer
-from common.libs.process_manager import ProcessManager
+from common.libs.job_manager import JobManager
 from logging.handlers import RotatingFileHandler as LogHandler
 import logging
 import os
@@ -13,8 +13,9 @@ class Server(SocketServer):
     """
     Receive request from user, and manage proxy for every oracle target.
     Attributes:
-        proxy_managers (dict{str:ProcessManager}): a dict contains all proxy for every target.
+        proxy_managers (dict{str:JobManager}): a dict contains all proxy for every target.
         check_time (int):
+        logger_name (str):
     """
 
     # initial codes
@@ -30,6 +31,7 @@ class Server(SocketServer):
         SocketServer.__init__(self, global_config.sock_addr, global_config.sock_port)
 
         # overwrite father class's logger and daemon context
+        self.logger_name = 'Mirror'
         self.__set_logger(global_config)
         self.__set_context()
 
@@ -65,7 +67,7 @@ class Server(SocketServer):
         log_handler.setFormatter(formatter)
 
         # custom logger
-        self.logger.name = "MirrorData"
+        self.logger.name = self.logger_name
         self.logger.addHandler(log_handler)
         self.logger.setLevel(log_level)
 
@@ -90,10 +92,11 @@ class Server(SocketServer):
         oracle_targets = OracleTarget.objects.all()
         target_names = [target.name for target in oracle_targets]
 
-        for name in target_names:
-            proxy = Proxy(name, self.logger)
-            proxy_manager = ProcessManager(proxy, self.logger, self.check_time)
-            self.proxy_managers[name] = proxy_manager
+        for target_name in target_names:
+            child_logger_name = self.logger_name + '.<%s>' % target_name
+            proxy = Proxy(target_name, child_logger_name)
+            proxy_manager = JobManager(proxy, child_logger_name, self.check_time)
+            self.proxy_managers[target_name] = proxy_manager
 
     def _handle(self, request):
         """

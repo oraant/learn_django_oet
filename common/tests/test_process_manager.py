@@ -1,5 +1,5 @@
 from django.test import TestCase
-from common.libs.process_manager import ProcessManager
+from common.libs.job_manager import JobManager
 from time import sleep
 from threading import Thread
 
@@ -8,10 +8,10 @@ from threading import Thread
 # todo : abnormal cases
 
 
-class MyProcessManager(ProcessManager):
+class MyJobManager(JobManager):
     def __init__(self):
         self.run = True
-        ProcessManager.__init__(self)
+        JobManager.__init__(self)
 
     def _start_background_thread(self):
         self.run = True
@@ -35,11 +35,11 @@ class MyProcessManager(ProcessManager):
 # from apscheduler.executors.pool import ThreadPoolExecutor
 # import threading
 #
-# class ScheduleJobs(ProcessManager):
+# class ScheduleJobs(JobManager):
 #
 #     def __init__(self, name):
 #         self.name = name
-#         ProcessManager.__init__(self)
+#         JobManager.__init__(self)
 #
 #     def _set_logger(self):
 #         import logging
@@ -80,7 +80,7 @@ class MyProcessManager(ProcessManager):
 
 class ProcessManagerTest(TestCase):
     def setUp(self):
-        self.mypm = MyProcessManager()
+        self.mypm = MyJobManager()
 
     def test_function(self):
         # open

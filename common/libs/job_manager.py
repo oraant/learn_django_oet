@@ -11,7 +11,7 @@ CLOSE_CHILD_PROCESS = 'CLOSE_CHILD_PROCESS'
 PING_CHILD_PROCESS = 'PING_CHILD_PROCESS'
 
 
-class ProcessManager:
+class JobManager:
     """
     Attributes:
         sender (PipeSender):
@@ -22,16 +22,16 @@ class ProcessManager:
         closed (Event):
     """
 
-    def __init__(self, job, logger=getLogger(), check_time=20):  # todo : complete comments
+    def __init__(self, job, logger_name, check_time=3600):  # todo : complete comments
         """
         Args:
             job (MainJob):
-            logger (logging.Logger):
+            logger_name (str):
             check_time (int):
         """
 
+        self.logger = getLogger(logger_name)
         self.job = job
-        self.logger = logger
         self.check_time = check_time
 
         self.opened = False
@@ -42,21 +42,21 @@ class ProcessManager:
 
     def start(self):
         if self.mutex.acquire(True):
-            self.logger.info('starting job: %s' % self.job.name)
+            self.logger.info('starting job.')
             result, msg = self.__run()
             self.mutex.release()
             return result, msg
 
     def stop(self):
         if self.mutex.acquire(True):
-            self.logger.info('stopping job: %s' % self.job.name)
+            self.logger.info('stopping job.')
             result, msg = self.__close()
             self.mutex.release()
             return result, msg
 
     def ping(self):
         if self.mutex.acquire(True):
-            self.logger.info('checking job: %s' % self.job.name)
+            self.logger.info('checking job.')
             result, msg = self.__ping()
             self.mutex.release()
             return result, msg
@@ -162,7 +162,7 @@ class ProcessManager:
                 continue
 
             if self.sender.ping_job()[0]:  # case3: process opened and and job is running
-                self.logger.debug('check Job every %ds: job is running healthily.' % self.check_time)
+                self.logger.info('check Job every %ds: job is running healthily.' % self.check_time)
                 self.mutex.release()
                 continue
 
@@ -298,9 +298,8 @@ class PipeListener:
 
 class MainJob:
 
-    def __init__(self, logger=getLogger()):
-        self.logger = logger
-        self.name = 'Job'
+    def __init__(self, logger_name):
+        self.logger = getLogger(logger_name)
 
     def run(self):
         """

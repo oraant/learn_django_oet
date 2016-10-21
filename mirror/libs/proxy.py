@@ -1,4 +1,4 @@
-from common.libs.process_manager import MainJob
+from common.libs.job_manager import MainJob
 from mirror.libs.puller import Puller
 from mirror.libs.cacher import Cacher
 from mirror.libs.recorder import Recorder
@@ -28,7 +28,7 @@ class Proxy(MainJob):
             Proxy will log it and end itself's job.
     """
 
-    def __init__(self, target_name, logger):
+    def __init__(self, target_name, logger_name):
         """
         Init instance with parameters.
 
@@ -38,8 +38,7 @@ class Proxy(MainJob):
         """
 
         # init parent things.
-        MainJob.__init__(self, logger)
-        self.name = "<Mirror %s's table>" % target_name
+        MainJob.__init__(self, logger_name)
 
         # init instance parameters
         self.target_name = target_name
