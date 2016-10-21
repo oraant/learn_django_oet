@@ -14,9 +14,11 @@ PING_CHILD_PROCESS = 'PING_CHILD_PROCESS'
 class JobManager:
     """
     Manager a job with a new process.
+
     Notes:
         This will run the job in a new process.
         The manager will check job's status automatically, and try to restart it.
+
     Attributes:
         opened (bool): dose the job successfully started or successfully stopped.
         mutex (thread.lock): make sure call start, stop, ping and __watch method once at same time.
@@ -31,6 +33,7 @@ class JobManager:
     def __init__(self, job, logger_name, check_time=3600):  # todo : complete comments
         """
         Instance of job manager
+
         Args:
             logger_name (str): name of the logger, make this individual when you have multi manager.
             job (MainJob): the job to manage.
@@ -50,8 +53,10 @@ class JobManager:
     def start(self):
         """
         Try to start job.
+
         Notes:
             This need a mutex lock, so it may hang for a while if another action is busying.
+
         Returns:
             bool: result of this action, True means successful, and False means failed.
             str: message of the result
@@ -65,8 +70,10 @@ class JobManager:
     def stop(self):
         """
         Try to stop job.
+
         Notes:
             This need a mutex lock, so it may hang for a while if another action is busying.
+
         Returns:
             bool: result of this action, True means successful, and False means failed.
             str: message of the result
@@ -80,8 +87,10 @@ class JobManager:
     def ping(self):
         """
         Try to check job's status
+
         Notes:
             This need a mutex lock, so it may hang for a while if another action is busying.
+
         Returns:
             bool: if the job is running. True means running.
             str: message of the result
@@ -95,8 +104,10 @@ class JobManager:
     def call(self, method):
         """
         Call method via string request.
+
         Args:
             method (str): which method you want to call.
+
         Returns:
             bool: result of the method
             str: message of the result
@@ -111,8 +122,10 @@ class JobManager:
     def __start(self):
         """
         Try to start job.
+
         Notes:
             This need a mutex lock, so it may hang for a while if another action is busying.
+
         Returns:
             bool: result of this action, True means successful, and False means failed.
             str: message of the result
@@ -150,8 +163,10 @@ class JobManager:
     def __stop(self):
         """
         Try to stop job.
+
         Notes:
             This need a mutex lock, so it may hang for a while if another action is busying.
+
         Returns:
             bool: result of this action, True means successful, and False means failed.
             str: message of the result
@@ -186,10 +201,12 @@ class JobManager:
 
     def __watch(self):
         """
-        Keep periodic check job's status in a new thread.
+        Keep check job's status in a new thread.
+
         Notes:
             If it found job has crushed, then try to restart it.
             If restart job successfully, then will keep watching, if not, it won't watch anymore.
+            This need a mutex lock, so it won't execute if another action is busying.
         """
 
         self.closed.clear()
@@ -235,8 +252,10 @@ class JobManager:
     def __open(self):
         """
         Try to open process.
+
         Notes:
             if this function said process is opened, then it is, so this function will confirm it by ping process.
+
         Returns:
             bool: process opened successfully or not.
             str: message received from child process, or internal error like opened but ping failed.
@@ -262,7 +281,16 @@ class JobManager:
         return True, 'Process opened.'
 
     def __close(self):
+        """
+        Try to close process.
 
+        Notes:
+            if this function said process is closed, then it is, so this function will confirm it by ping process.
+
+        Returns:
+            bool: process closed successfully or not.
+            str: message received from child process, or internal error like closed but can still ping.
+        """
         # try to close process
         result, msg = self.sender.close_process()
 
@@ -281,7 +309,16 @@ class JobManager:
         return result, msg
 
     def __run(self):
+        """
+        Try to run job.
 
+        Notes:
+            if this function said job is run, then it is, so this function will confirm it by ping job.
+
+        Returns:
+            bool: run job successfully or not.
+            str: message received from job, or internal error like opened but ping failed.
+        """
         # try to run job
         result, msg = self.sender.run_job()
 
@@ -299,7 +336,16 @@ class JobManager:
         return result, msg
 
     def __end(self):
+        """
+        Try to end job.
 
+        Notes:
+            if this function said job is ended, then it is, so this function will confirm it by ping job.
+
+        Returns:
+            bool: end job successfully or not.
+            str: message received from job, or internal error like ended but still can ping.
+        """
         # try to end job
         result, msg = self.sender.end_job()
 
@@ -317,6 +363,13 @@ class JobManager:
         return result, msg
 
     def __ping(self):
+        """
+        Try to check job's status
+
+        Returns:
+            bool: if the job is running. True means running.
+            str: message of the result
+        """
         if not self.opened:  # case1: process didn't open
             return False, 'process did not open'
 
@@ -328,12 +381,22 @@ class JobManager:
 
 
 class PipeSender:
+    """
+    Send different message from father pipe to child process's pipe listener.
+    """
 
     def __init__(self, parent_pipe, child_pipe, logger):
+        """
+        Init instance.
+
+        Args:
+            parent_pipe (_multiprocessing.Connection): pipe's father port to send msg to child's port.
+            child_pipe (_multiprocessing.Connection): pipe's child port to receive msg from father port.
+            logger (logging.Logger): logger to log msg.
+        """
 
         self.parent_pipe = parent_pipe
         self.child_pipe = child_pipe
-
         self.logger = logger
 
         self.run_job = partial(self.send, msg=RUN_CHILD_JOB)
@@ -343,6 +406,17 @@ class PipeSender:
         self.ping_process = partial(self.send, msg=PING_CHILD_PROCESS, wait_time=1)
 
     def send(self, msg, wait_time=None):
+        """
+        Send message from father pipe to child process's pipe listener.
+
+        Args:
+            msg (str): message you want to send to child
+            wait_time (int): how long to wait if child doesn't response, or response slowly.
+
+        Returns:
+            bool: child's response, which means the action is succeed or not. or just can't receive response.
+            msg: child's response, talk us what's going on here.
+        """
         self.logger.debug('[[ ParentPipe ]] >>> ( %s ) >>> [[ ---------- ]]' % msg)
 
         self.parent_pipe.send(msg)
@@ -359,8 +433,23 @@ class PipeSender:
 
 
 class PipeListener:
+    """
+    Run a child process and listen pipe msg, according to string request, call different method to handle job.
+
+    Attributes:
+        keep_listen (bool): If this is true, then the process's main thread will keep listen msg from pipe.
+        operations (dict{str:function}): dictionary with functions for mapping string to method.
+    """
 
     def __init__(self, pipe, job, logger):
+        """
+        Init instance.
+
+        Args:
+            pipe (_multiprocessing.Connection): pipe's child port to receive msg from father port.
+            job (MainJob): the job you want to manage, like run, end and auto restart when it crushed.
+            logger (logging.Logger): log messages.
+        """
         self.pipe = pipe
         self.job = job
         self.logger = logger
@@ -375,7 +464,13 @@ class PipeListener:
             PING_CHILD_PROCESS: self.ping_process,
         }
 
-    def listen(self):  # the main thread running in child process.
+    def listen(self):
+        """
+        The main thread of the child process, receive string msg from pipe, and call the mapping method.
+
+        Returns:
+
+        """
 
         while self.keep_listen:
             self.logger.debug('process keep listening')
