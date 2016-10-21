@@ -13,21 +13,28 @@ PING_CHILD_PROCESS = 'PING_CHILD_PROCESS'
 
 class JobManager:
     """
+    Manager a job with a new process.
+    Notes:
+        This will run the job in a new process.
+        The manager will check job's status automatically, and try to restart it.
     Attributes:
-        sender (PipeSender):
-        listener (PipeListener):
-        opened (bool):
-        process (Process):
-        mutex (thread.lock):
-        closed (Event):
+        opened (bool): dose the job successfully started or successfully stopped.
+        mutex (thread.lock): make sure call start, stop, ping and __watch method once at same time.
+        closed (Event): when closing job successfully, stop the __watch thread.
+
+        sender (PipeSender): send msg to child process's pipe listener.
+        listener (PipeListener): run a child process and listen pipe msg.
+        process (Process): child process, declare it as instance variable to close it clearly with join() method.
+
     """
 
     def __init__(self, job, logger_name, check_time=3600):  # todo : complete comments
         """
+        Instance of job manager
         Args:
-            job (MainJob):
-            logger_name (str):
-            check_time (int):
+            logger_name (str): name of the logger, make this individual when you have multi manager.
+            job (MainJob): the job to manage.
+            check_time (int): interval time to check job's status, unit is seconds.
         """
 
         self.logger = getLogger(logger_name)
@@ -41,20 +48,44 @@ class JobManager:
     # interface functions to call by others
 
     def start(self):
+        """
+        Try to start job.
+        Notes:
+            This need a mutex lock, so it may hang for a while if another action is busying.
+        Returns:
+            bool: result of this action, True means successful, and False means failed.
+            str: message of the result
+        """
         if self.mutex.acquire(True):
             self.logger.info('starting job.')
-            result, msg = self.__run()
+            result, msg = self.__start()
             self.mutex.release()
             return result, msg
 
     def stop(self):
+        """
+        Try to stop job.
+        Notes:
+            This need a mutex lock, so it may hang for a while if another action is busying.
+        Returns:
+            bool: result of this action, True means successful, and False means failed.
+            str: message of the result
+        """
         if self.mutex.acquire(True):
             self.logger.info('stopping job.')
-            result, msg = self.__close()
+            result, msg = self.__stop()
             self.mutex.release()
             return result, msg
 
     def ping(self):
+        """
+        Try to check job's status
+        Notes:
+            This need a mutex lock, so it may hang for a while if another action is busying.
+        Returns:
+            bool: if the job is running. True means running.
+            str: message of the result
+        """
         if self.mutex.acquire(True):
             self.logger.info('checking job.')
             result, msg = self.__ping()
@@ -65,80 +96,224 @@ class JobManager:
         """
         Call method via string request.
         Args:
-            method (str):
+            method (str): which method you want to call.
         Returns:
-            bool:
-            str:
+            bool: result of the method
+            str: message of the result
         """
         operations = {"start": self.start, "stop": self.stop, "ping": self.ping}
         if method not in operations.keys():
             return False, 'Unknown command.'
         return operations.get(method)()
 
-    # internal functions to handle logic  # todo : change to start and stop function
+    # internal functions to handle logic
+
+    def __start(self):
+        """
+        Try to start job.
+        Notes:
+            This need a mutex lock, so it may hang for a while if another action is busying.
+        Returns:
+            bool: result of this action, True means successful, and False means failed.
+            str: message of the result
+        """
+
+        # job has already started before.
+        if self.opened:
+            return False, 'Job has started before.'
+
+        # try to open process.
+        open_result, open_msg = self.__open()
+
+        # process opened failed.
+        if not open_result:
+            return open_result, open_msg
+
+        # try to run job.
+        run_result, run_msg = self.__run()
+
+        # run job failed.
+        if not run_result:
+
+            close_result, close_msg = self.__close()
+
+            if not close_result:  # run job failed, and close process failed.
+                return False, 'Run job failed - %s\nClose process failed - %s' % (run_msg, close_msg)
+            else:  # run job failed, and close process successfully.
+                return run_result, run_msg
+
+        # run job successfully.
+        Thread(target=self.__watch).start()
+        self.opened = True
+        return run_result, run_msg
+
+    def __stop(self):
+        """
+        Try to stop job.
+        Notes:
+            This need a mutex lock, so it may hang for a while if another action is busying.
+        Returns:
+            bool: result of this action, True means successful, and False means failed.
+            str: message of the result
+        """
+
+        # job is not running.
+        if not self.opened:
+            return False, 'Job is not running.'
+
+        # if job is running, then stop it first.
+        if self.sender.ping_job()[0]:
+
+            end_result, end_msg = self.__end()
+
+            if not end_result:  # job is running but end failed.
+                return end_result, end_msg
+
+        # if process is opened, then close it first.
+        if self.sender.ping_process()[0]:
+
+            close_result, close_msg = self.__close()
+
+            if not close_result:  # process is opened but close failed.
+                return close_result, close_msg
+            else:
+                self.closed.set()
+                self.opened = False
+                return True, 'Job stopped successfully'
+
+        # action is opened, but job is ended and process is closed
+        return False, 'Logic Error, action is opened, but job is ended and process is closed.'
+
+    def __watch(self):
+        """
+        Keep periodic check job's status in a new thread.
+        Notes:
+            If it found job has crushed, then try to restart it.
+            If restart job successfully, then will keep watching, if not, it won't watch anymore.
+        """
+
+        self.closed.clear()
+
+        while True:
+
+            if self.closed.wait(self.check_time):  # if process closed, end the watch thread.
+                break
+
+            if not self.mutex.acquire(False):  # if mutex has been locked, do nothing
+                continue
+
+            if self.sender.ping_job()[0]:  # case3: process opened and and job is running
+                self.logger.info('check Job every %ds: job is running healthily.' % self.check_time)
+                self.mutex.release()
+                continue
+
+            self.logger.warn('check Job every %ds: job is not running! Trying rerun job.' % self.check_time)
+
+            close_result, close_msg = self.__close()
+            if not close_result:
+                self.logger.error("job crushed, and can't stop process: %s. Stop watching." % close_msg)
+                self.mutex.release()
+                break
+
+            open_result, open_msg = self.__open()
+            if not open_result:
+                self.logger.error("job crushed, but restart process failed: %s. Stop watching." % open_msg)
+                self.mutex.release()
+                break
+
+            run_result, run_msg = self.__run()
+            if not run_result:
+                self.logger.error("job crushed, but restart job failed: %s. Stop watching." % run_msg)
+                self.mutex.release()
+                break
+
+            self.logger.info('job crushed, but restart it successfully.')
+            self.mutex.release()
+
+    # this functions just do one thing and output a result. they don't need to handle the logic between each other.
 
     def __open(self):
-        if self.opened:  # case1: has already opened
-            return False, 'Has already opened'
-        else:  # case2: never opened
-
+        """
+        Try to open process.
+        Notes:
+            if this function said process is opened, then it is, so this function will confirm it by ping process.
+        Returns:
+            bool: process opened successfully or not.
+            str: message received from child process, or internal error like opened but ping failed.
+        """
+        # try to open process
+        try:
             parent_pipe, child_pipe = Pipe()
             self.sender = PipeSender(parent_pipe, child_pipe, self.logger)
             self.listener = PipeListener(child_pipe, self.job, self.logger)
             self.process = Process(target=self.listener.listen)
-
-            self.opened = True
             self.process.start()
-            return True, 'Process opened.'
+        except Exception as e:
+            self.logger.error("[%s] - %s" % (type(e), e))
+            return False, 'Create process failed, please check logfile.'
+
+        # verify open result
+        if not self.sender.ping_process()[0]:
+            self.logger.error('Process of job opened, but ping failed.')
+            return False, 'Process of job opened, but ping failed.'
+
+        # verify passed
+        self.logger.info('Process of job opened, and ping passed.')
+        return True, 'Process opened.'
 
     def __close(self):
-        if not self.opened:  # case1: process closed or never opened
-            return False, 'already closed or never opened'
 
-        if self.sender.ping_job()[0]:  # case2: if job is running, close it first
-            result, msg = self.sender.end_job()
-            if not result:
-                return result, msg  # result1: close job failed
+        # try to close process
+        result, msg = self.sender.close_process()
 
-        if self.sender.ping_process()[0]:  # case3: if process is running, close it
-            result, msg = self.sender.close_process()
-            if not result:
-                return result, msg  # result2: close process failed
+        if not result:
+            self.logger.error('process stop failed.')
+            return result, msg
 
+        # verify close result
+        if self.sender.ping_process()[0]:
+            self.logger.error('process stopped, but still can ping.')
+            return False, 'process stopped, but still can ping.'
+
+        # verify passed
         self.process.join()
-        self.opened = False
-        self.closed.set()
-        return True, 'job stopped and process closed.'
+        self.logger.info('process stopped successfully')
+        return result, msg
 
-    def __run(self, keep_try=False):
-        if not self.opened:  # case1: if process didn't open, open first.
-            self.__open()
+    def __run(self):
 
-        if self.sender.ping_job()[0]:  # case2: process opened but child's job is already running.
-            return False, 'job is already running'
+        # try to run job
+        result, msg = self.sender.run_job()
 
-        result, msg = self.sender.run_job()  # case3: process opened and child's job is not running
+        if not result:
+            self.logger.error('run job failed.')
+            return result, msg
 
-        if result or keep_try:  # result1: if run job successfully, or need watching the healthy.
-            self.closed.clear()
-            Thread(target=self.__watch).start()
-        else:  # result2: if start failed and doesn't need watching.
-            tmp_result, tmp_msg = self.sender.close_process()
-            if tmp_result:  # stop process successfully
-                self.process.join()
-            else:
-                msg = '%s\n%s' % (msg, tmp_msg)
+        # verify run result
+        if not self.sender.ping_job()[0]:
+            self.logger.error('job has run, but ping failed.')
+            return False, 'job has run, but ping failed.'
 
+        # verify passed
+        self.logger.info('job has run, and ping passed.')
         return result, msg
 
     def __end(self):
-        if not self.opened:  # case1: process didn't open
-            return False, 'process did not open'
 
-        if not self.sender.ping_job()[0]:  # case2: process opened but job is not running.
-            return False, 'job is not running'
+        # try to end job
+        result, msg = self.sender.end_job()
 
-        result, msg = self.sender.end_job()  # case3: process opened and job is running.
+        if not result:
+            self.logger.error('end job failed.')
+            return result, msg
+
+        # verify end result
+        if self.sender.ping_job()[0]:
+            self.logger.error('job has end, but still can ping.')
+            return False, 'job has end, but still can ping.'
+
+        # verify passed
+        self.logger.info('job end successfully')
         return result, msg
 
     def __ping(self):
@@ -150,26 +325,6 @@ class JobManager:
 
         if self.sender.ping_process()[0]:  # case3: process opened but job is not running.
             return False, 'job is not running'
-
-    def __watch(self):
-
-        while True:
-
-            if self.closed.wait(self.check_time):  # case2: if process closed, end the watch thread.
-                break
-
-            if not self.mutex.acquire(False):  # case1: if mutex has been locked, do nothing
-                continue
-
-            if self.sender.ping_job()[0]:  # case3: process opened and and job is running
-                self.logger.info('check Job every %ds: job is running healthily.' % self.check_time)
-                self.mutex.release()
-                continue
-
-            self.logger.warn('check Job every %ds: job is not running! Trying rerun job.' % self.check_time)
-            self.__close()  # case4: process opened and and job is not running
-            self.__run(True)
-            self.mutex.release()
 
 
 class PipeSender:
@@ -268,7 +423,7 @@ class PipeListener:
         except TypeError:
             result, msg = True, 'Job run successfully -- maybe.'
         except Exception as e:
-            result, msg = False, 'Unknown Error when ping job, please check log file.'
+            result, msg = False, 'Unknown Error when run job, please check log file.'
             self.logger.error("[%s] - %s" % (type(e), e))
 
         return result, msg
@@ -279,7 +434,7 @@ class PipeListener:
         except TypeError:
             result, msg = True, 'Job end successfully -- maybe.'
         except Exception as e:
-            result, msg = False, 'Unknown Error when ping job, please check log file.'
+            result, msg = False, 'Unknown Error when run job, please check log file.'
             self.logger.error("[%s] - %s" % (type(e), e))
 
         return result, msg
