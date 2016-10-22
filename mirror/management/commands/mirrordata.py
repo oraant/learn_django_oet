@@ -30,7 +30,7 @@ class Command(BaseCommand):  # todo : chinese support
             self.server = Server(global_config)
 
         # actions for arg parser.
-        self.socket_server_actions = ['startup', 'shutdown', 'check', 'debug']
+        self.socket_server_actions = ['startup', 'shutdown', 'check']
         self.proxy_job_actions = ['start', 'stop', 'ping']
 
         # target names can be choice.
@@ -102,44 +102,17 @@ class Command(BaseCommand):  # todo : chinese support
         handler_choice.get(sub_command)(options)
 
     def server_handle(self, options):
-        action = options['action']
 
-        def startup(daemon=True):  # todo : should be in socket_server
-            if not self.server.ping():
-                self.server.startup(daemon)
-            else:
-                msg = self.server.check()
-                self.stdout.write(msg)
-
-        def shutdown():  # todo : should be in socket_server
-            if self.server.ping():
-                msg = self.server.shutdown()
-            else:
-                msg = self.server.check()
-            self.stdout.write(msg)
-
-        def check():
-            msg = self.server.check()
-            self.stdout.write(msg)
-
-        def debug():
-            startup(False)
-
-        functions = [startup, shutdown, check, debug]
+        functions = [self.server.startup, self.server.shutdown, self.server.check]
         operations = dict(zip(self.socket_server_actions, functions))
+
+        action = options['action']
         operations.get(action)()
 
     def proxy_handle(self, options):
 
-        if not self.server.ping():
-            self.stdout.write('Server is not running, Please start it first.')
-            return
-
         action = options['action']
         targets = options['targets']
 
-        request = str(
-            {'action': action, 'targets': targets}
-        )
-
-        print self.server.request(request)
+        request = str({'action': action, 'targets': targets})
+        self.server.request(request)
