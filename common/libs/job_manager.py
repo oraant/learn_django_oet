@@ -30,7 +30,7 @@ class JobManager:
 
     """
 
-    def __init__(self, job, logger_name, check_time=3600):  # todo : complete comments
+    def __init__(self, job, logger_name, check_time=3600):
         """
         Instance of job manager
 
@@ -467,9 +467,6 @@ class PipeListener:
     def listen(self):
         """
         The main thread of the child process, receive string msg from pipe, and call the mapping method.
-
-        Returns:
-
         """
 
         while self.keep_listen:
@@ -494,7 +491,9 @@ class PipeListener:
     def close(self):
         """
         Stop child's process by change status
+
         Returns:
+            bool: action's result
             str: close successfully or failed.
         """
         self.logger.debug('process closing')
@@ -504,8 +503,10 @@ class PipeListener:
     def ping_process(self):
         """
         Check child process's job's status
+
         Returns:
-            bool:
+            bool: if process is healthy
+            str: message
         """
         self.logger.debug('process pong')
         return True, 'child process is running.'
@@ -513,10 +514,21 @@ class PipeListener:
     # call job's functions
 
     def run(self):
+        """
+        Try to call job's run method.
+
+        Raises:
+            TypeError: job's method doesn't return result and message under correct format.
+
+        Returns:
+            bool: action's result, run job successfully or failed.
+            str: messages of what's going on.
+        """
         try:
             result, msg = self.job.run()
-        except TypeError:
-            result, msg = True, 'Job run successfully -- maybe.'
+        except TypeError as e:
+            self.logger.error("[%s] - %s" % (type(e), e))
+            raise
         except Exception as e:
             result, msg = False, 'Unknown Error when run job, please check log file.'
             self.logger.error("[%s] - %s" % (type(e), e))
@@ -524,10 +536,21 @@ class PipeListener:
         return result, msg
 
     def end(self):
+        """
+        Try to call job's end method.
+
+        Raises:
+            TypeError: job's method doesn't return result and message under correct format.
+
+        Returns:
+            bool: action's result, end job successfully or failed.
+            str: messages of what's going on.
+        """
         try:
             result, msg = self.job.end()
-        except TypeError:
-            result, msg = True, 'Job end successfully -- maybe.'
+        except TypeError as e:
+            self.logger.error("[%s] - %s" % (type(e), e))
+            raise
         except Exception as e:
             result, msg = False, 'Unknown Error when run job, please check log file.'
             self.logger.error("[%s] - %s" % (type(e), e))
@@ -535,6 +558,17 @@ class PipeListener:
         return result, msg
 
     def ping_job(self):
+        """
+        Try to call job's ping method.
+
+        Notes:
+            if job's method doesn't return result and message under correct format,
+            this will return False instead of raise Exception
+
+        Returns:
+            bool: job is running or not.
+            str: messages of what's going on.
+        """
         try:
             result, msg = self.job.ping()
         except TypeError:
@@ -547,40 +581,47 @@ class PipeListener:
 
 
 class MainJob:
-
     def __init__(self, logger_name):
         self.logger = getLogger(logger_name)
 
     def run(self):
         """
+        Start a new thread to run main job.
+        Need overwrite by child class.
+
         Notes:
-            Start a new thread to run main job.
-            Never blocking! Run the thread at background.
+            This should not blocking code! Run the thread at background!
+
         Returns:
             bool: run successful or not
-            str:
+            str: messages of what's going on here.
         """
         self.logger.debug('empty job started')
-        return True, 'job is empty.'
+        return False, 'job is empty.'
 
     def end(self):
         """
+        End the job thread.
+        Need overwrite by child class.
+
         Notes:
-            End the job thread.
-            Need blocking! When this method done, make sure all job has stopped.
+            This should blocking! When this method done, make sure all job has stopped!
+
         Returns:
             bool: terminated successful or not
-            str:
+            str: messages of what's going on here.
         """
         self.logger.debug('empty job stopped')
-        return True, 'job is empty.'
+        return False, 'job is empty.'
 
     def ping(self):
         """
         Check if child's job is running.
+        Need overwrite by child class.
+
         Returns:
             bool: if child's job is running.
-            str:
+            str: messages of what's going on here.
         """
         self.logger.debug('empty job pong')
         return False, 'job is empty.'
