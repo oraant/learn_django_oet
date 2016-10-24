@@ -36,7 +36,6 @@ class SocketServer:
         self.context = DaemonContext()
 
         self.listen = True
-        self.request_time_out = 60
 
         self.CHECK_SOCKET_SERVER, self.STOP_SOCKET_SERVER = 'CHECK_SOCKET_SERVER', 'STOP_SOCKET_SERVER'
         self.SERVER_IS_RUNNING, self.STOPPING_SERVER = 'SERVER_IS_RUNNING', 'STOPPING_SERVER'
@@ -56,22 +55,23 @@ class SocketServer:
         """
 
         if self.ping():
-            print 'Startup server [failed], Server already started.'
-            return
+            return 'Startup server [failed], Server already started.'
 
+        print "starting server at %s:%d" % (self.sock_host, self.sock_port)
         with self.context:
-            print "starting server at %s:%d" % (self.sock_host, self.sock_port)
-            self.logger.info("~~~~~~ starting server at %s:%d. ~~~~~~" % (self.sock_host, self.sock_port))
             self.__startup()
 
     def shutdown(self):
-        """Send stop request to server."""
+        """
+        Send stop request to server.
+        Notes:
+            This method will check if server is running first.
+        """
         if not self.ping():
-            print 'server is not running, please start it first.'
-            return
+            return 'server is not running, please start it first.'
 
         self.logger.info("stopping server")
-        print self.request(self.STOP_SOCKET_SERVER)
+        return self.request(self.STOP_SOCKET_SERVER)
 
     def check(self):
         """Send check request to server."""
@@ -100,7 +100,6 @@ class SocketServer:
         client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
             client_socket.connect((self.sock_host, self.sock_port))
-            client_socket.settimeout(60)
             client_socket.send(request)
             response = client_socket.recv(1024)
         except socket.error as e:
@@ -111,8 +110,40 @@ class SocketServer:
         finally:
             client_socket.close()
 
-        self.logger.debug("get response from server with %s" % response)
+        self.logger.debug("get response from server with:\n%s" % response)
         return response
+
+    def __startup(self):
+        """
+        call child's _startup(),if call successfully,then make server listening.
+        """
+        self.logger.debug("server starting in background.")
+
+        # try to call child's _startup()
+        try:
+            self.logger.debug("calling child's _startup()")
+            result, msg = self._startup()
+        except Exception as e:
+            error_info = traceback.format_exc()
+            self.logger.error("call child's _startup() failed: %s. Type is: %s" % (e, type(e)))
+            self.logger.error("Traceback is %s" % error_info)
+            raise
+
+        if not result:
+            self.logger.error("child's _startup() failed: %s" % msg)
+            return
+
+        self.logger.debug("child's _startup() done with msg: %s" % msg)
+        self.__listen()
+
+    def _startup(self):
+        """
+        Wait for child class's overwrite.
+        Returns:
+            bool: start successfully or not.
+        """
+        self.logger.debug("child class didn't overwrite this method.")
+        return True
 
     # functions in background daemon to response
 
@@ -134,7 +165,7 @@ class SocketServer:
 
             self.logger.debug("send request %s to handler" % request)
             response = self.__handle(request)
-            self.logger.debug("get response %s from handler" % response)
+            self.logger.debug("get response from handler:\n%s" % response)
             connection.send(response)
             self.logger.debug("send response back to request.")
 
@@ -142,30 +173,12 @@ class SocketServer:
                 connection.close()
                 self.logger.debug("socket server stopped")
 
-    def __startup(self):
-        """call child's _startup() and make server listening"""
-        self.logger.debug("server starting in background.")
-
-        # try to call child's _startup()
-        try:
-            self.logger.debug("calling child's _startup()")
-            self._startup()
-        except Exception as e:
-            error_info = traceback.format_exc()
-            self.logger.error("call child's _startup() failed: %s. Type is: %s" % (e, type(e)))
-            self.logger.error("Traceback is %s" % error_info)
-            raise
-        else:
-            self.logger.debug("child's _startup() done")
-
-        self.__listen()
-
-    def _startup(self):
-        self.logger.debug("child class didn't overwrite this method.")
-
     def __handle(self, request):
         """
-        Choice a right way to handle the request.
+        Handle request from user ---- choice a right way to handle the request.
+        Notes:
+            If the request is for socket server, then map it to the server's functions.
+            If the request is for proxy, then map it to child class's _handle method.
         Args:
             request (str): requested received from client.
         Returns:
@@ -178,7 +191,7 @@ class SocketServer:
         else:
             response = self._handle(request)
 
-        self.logger.debug("child sending response: %s." % response)
+        self.logger.debug("child sending response:\n%s." % response)
         return response
 
     def _handle(self, request):
@@ -198,12 +211,11 @@ class SocketServer:
         self.logger.debug("server checking.")
         return self.SERVER_IS_RUNNING
 
-    def _check(self):
-        self.logger.debug("child class didn't overwrite this method.")
-
     def __shutdown(self):
         """
         Call child's _shutdown(), turn off server's listen condition to close server
+        Notes:
+            if child's _shutdown return messages, then output the messages first.
         Returns
             str: response to user.
         """
@@ -212,17 +224,26 @@ class SocketServer:
         # try to call child's _shutdown()
         try:
             self.logger.debug("calling child's _shutdown()")
-            self._shutdown()
+            result, msg = self._shutdown()
         except Exception as e:
             error_info = traceback.format_exc()
             self.logger.error("call child's _shutdown() failed: %s. Type is: %s" % (e, type(e)))
             self.logger.error("Traceback is %s" % error_info)
             return "Error when shutdown server."
-        else:
-            self.logger.debug("child's _shutdown() done")
+
+        if not result:
+            self.logger.error("child's _shutdown() failed: %s" % msg)
+            return 'Stop Server failed: %s' % msg
 
         self.listen = False
-        return self.STOPPING_SERVER
+        self.logger.debug("child's _shutdown() done with msg: %s")
+        return msg
 
     def _shutdown(self):
+        """
+        Wait for child class's overwrite.
+        Returns:
+            bool: shutdown messages.
+        """
         self.logger.debug("child class didn't overwrite this method.")
+        return

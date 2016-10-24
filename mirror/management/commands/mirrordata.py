@@ -1,8 +1,6 @@
 # coding:utf-8
 
 from django.core.management.base import BaseCommand, CommandParser
-# from mirror.models import GlobalConfig, OracleTarget
-# from common.libs.socket_server import SocketServer
 from mirror.libs.server import Server
 
 # complete this with daemon and socket server.
@@ -14,27 +12,17 @@ class Command(BaseCommand):  # todo : chinese support
 
     def __init__(self):
         BaseCommand.__init__(self)
-        from mirror.models import GlobalConfig, OracleTarget
 
-        # get socket server object.
+        # try to get socket server.
         try:
-            global_config = GlobalConfig.objects.filter(enable=True)[0]
-            oracle_targets = OracleTarget.objects.all()
-        except IndexError as e:
-            print "Can't get global config, no config's enable is True."
-            return
+            self.server = Server()
         except Exception as e:
-            print "Unknown Error: [%s]: %s" % (type(e), e)
-            return
-        else:
-            self.server = Server(global_config)
+            self.server = None
+            self.init_error = str(e)
 
         # actions for arg parser.
         self.socket_server_actions = ['startup', 'shutdown', 'check']
         self.proxy_job_actions = ['start', 'stop', 'ping']
-
-        # target names can be choice.
-        self.targets = [x.name for x in oracle_targets]
 
     def add_arguments(self, parser):
         """
@@ -82,16 +70,17 @@ class Command(BaseCommand):  # todo : chinese support
         proxy.add_argument(
             '-t', '--targets',
             metavar='TARGET',
-            nargs='+',
-            choices=self.targets,
-            default=self.targets,
-            help='Targets can be empty or some of [%s]' % '|'.join(self.targets)
+            nargs='*',
+            help='Targets can be empty which means ALL, you can list targets by <./manage.py mirrordata proxy -a ping>.'
         )
 
     def handle(self, *args, **options):
         """
         call different handle for different sub command.
         """
+        if not self.server:
+            print 'Error : %s' % self.init_error
+            return
 
         handler_choice = {
             'proxy': self.proxy_handle,
@@ -107,7 +96,7 @@ class Command(BaseCommand):  # todo : chinese support
         operations = dict(zip(self.socket_server_actions, functions))
 
         action = options['action']
-        operations.get(action)()
+        print operations.get(action)()
 
     def proxy_handle(self, options):
 
@@ -115,4 +104,4 @@ class Command(BaseCommand):  # todo : chinese support
         targets = options['targets']
 
         request = str({'action': action, 'targets': targets})
-        self.server.request(request)
+        print self.server.request(request)
