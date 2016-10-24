@@ -191,6 +191,7 @@ class OracleTarget(models.Model):
     mysql_db = models.CharField(max_length=50, unique=True, validators=[special_sign], help_text='mysql database name.')
     redis_server = models.ForeignKey(RedisServer)
     redis_db = models.IntegerField(unique=True, help_text='redis db number, must be unique.')
+    # todo : mysql_db and redis_db should not be unique, but use a validator to make sure it's unique.
 
     def __unicode__(self):
         return self.name
