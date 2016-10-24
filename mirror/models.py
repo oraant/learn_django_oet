@@ -161,7 +161,7 @@ class OracleTarget(models.Model):
 
     # validators
 
-    special_sign = RegexValidator(regex=r' ', inverse_match=True, message="Use '_' instead of ' '")
+    special_sign = RegexValidator(regex=r' ', inverse_match=True, message="Use '_' instead of ' ' / '-' / '.'")
 
     # choices
     table_sql_list = [(x.__name__, x.subclass_name()) for x in TableCollections.__subclasses__()]
@@ -185,9 +185,9 @@ class OracleTarget(models.Model):
 
     table_collection = models.CharField(max_length=30, choices=CollectionChoices)
     mysql_server = models.ForeignKey(MySQLServer)
-    mysql_db = models.CharField(max_length=50, unique=True, validators=[special_sign])
+    mysql_db = models.CharField(max_length=50, unique=True, validators=[special_sign], help_text='mysql database name.')
     redis_server = models.ForeignKey(RedisServer)
-    redis_db = models.IntegerField(unique=True)
+    redis_db = models.IntegerField(unique=True, help_text='redis db number, must be unique.')
 
     def __unicode__(self):
         return self.name
