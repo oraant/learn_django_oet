@@ -20,7 +20,7 @@ class Server(SocketServer):
 
     # initial codes
 
-    def __init__(self):  # todo : config and oracle targets, receive or import by it self.
+    def __init__(self):
         """
         Init socket server, overwrite it's logger and context, and prepare proxy for every oracle target.
 
@@ -90,7 +90,7 @@ class Server(SocketServer):
 
     # overwrite parent's method.
 
-    def _startup(self):  # todo : handle exception.
+    def _startup(self):
         """
         Init proxies for every oracle target when startup server.
         Raises:

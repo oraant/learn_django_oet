@@ -62,7 +62,6 @@ class Cacher:
             cursor.close()
             self.connection.select_db(self.db)
 
-        # todo : test for tmp
         self.mutex = Lock()
 
     @staticmethod
@@ -91,15 +90,10 @@ class Cacher:
             cursor = self.connection.cursor()  # this will not raise exceptions even the connection is closed.
 
             try:
-                a = 1  # todo : test for tmp
                 cursor.execute(table.create)
-                a = 2  # todo : test for tmp
                 cursor.execute(table.delete)
-                a = 3  # todo : test for tmp
                 cursor.executemany(table.insert, data)
-                a = 4  # todo : test for tmp
                 cursor.execute("commit")
-                a = 5  # todo : test for tmp
 
             # maybe you want to generate a cursor after connection is closed.
             except MySQLdb.InterfaceError as e:

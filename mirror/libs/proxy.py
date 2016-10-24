@@ -16,7 +16,6 @@ class Proxy(MainJob):
         target (mirror.models.OracleTarget): target oracle want to mirror.
         table_collection (mirror.models.TableCollections): tables want to mirror.
 
-        logger (logging.Logger): handle output logs.
         scheduler (Scheduler): Scheduler to run jobs periodically.
 
         puller (puller.Puller): pull data from target database's tables.
@@ -28,13 +27,13 @@ class Proxy(MainJob):
             Proxy will log it and end itself's job.
     """
 
-    def __init__(self, target_name, logger_name):
+    def __init__(self, target_name, logger_name):  # todo : custom process title will be better.
         """
         Init instance with parameters.
 
         Args:
             target_name (str): target oracle's name you want to mirror
-            logger (logging.Logger): handle output logs
+            logger_name (str): name os this process's logger.
         """
 
         # init parent things.

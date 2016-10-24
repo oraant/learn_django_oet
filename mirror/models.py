@@ -28,7 +28,7 @@ class GlobalConfig(models.Model):
     enable = models.BooleanField(default=True, help_text="NOTICE!! Only one row can be enabled!!")
     desc = models.CharField(max_length=300)
 
-    run = models.BooleanField(default=True, help_text="Do you want to start or stop this model at web level.")
+    run = models.BooleanField(default=True, help_text="Do you want to start or stop this model at web level.(Unusable)")
 
     log_file = models.CharField(max_length=100, default=join(settings.BASE_DIR, 'data', 'mirror.log'))
     log_level = models.IntegerField(default=30, choices=LOG_LEVEL)
@@ -42,7 +42,7 @@ class GlobalConfig(models.Model):
     )
     sock_port = models.IntegerField(default=15521, help_text="Which port to bind the socket server in Mirror.")
 
-    processes = models.IntegerField(default=4, help_text="Max number of processes.")
+    processes = models.IntegerField(default=4, help_text="Max number of processes.(Unusable)")
     reborn = models.DurationField(
         default=timedelta(0, 7200),
         help_text="When can't connect with server, how many seconds to wait to retry. Eg: 0:01:10 for 70 seconds."

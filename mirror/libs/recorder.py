@@ -44,7 +44,7 @@ class Recorder:
         try:
             result = self.connection.ping()
         except Exception as e:
-            raise RedisConnectError('connection did not established')
+            raise RedisConnectError('connection did not established, error is: %s' % e)
 
         # test ping
         if not result:

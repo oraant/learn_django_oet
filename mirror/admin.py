@@ -3,22 +3,52 @@ from django.contrib import admin
 from mirror.models import *
 
 
-@admin.register(GlobalConfig, RedisServer, MySQLServer)
-class BasicAdmin(admin.ModelAdmin):
+@admin.register(GlobalConfig)
+class ConfigAdmin(admin.ModelAdmin):
 
-    """Admin for Models who want's to display simple list."""
+    """Admin for Global Config Models."""
 
-    list_display = ('id', 'name', 'enable', 'desc')
+    list_display = ('name', 'enable', 'desc', 'sock_addr', 'sock_port')
+
+    fieldsets = (
+        (
+            'Basic', {
+                'description': '修改数据后，需要通过重启 Socket Server 才可以生效!',
+                'fields': ('name', 'enable', 'desc', 'run')
+            }
+        ), (
+            'Log Files', {
+                'fields': ('log_file', 'log_level', 'log_size', 'log_count', 'log_format')
+            }
+        ), (
+            'Socket Server', {
+                'fields': ('sock_addr', 'sock_port')
+            }
+        ), (
+            'Others', {
+                'fields': ('processes', 'reborn')
+            }
+        )
+    )
+
+
+@admin.register(RedisServer, MySQLServer)
+class ServerAdmin(admin.ModelAdmin):
+
+    """Admin for MySQL and Redis Server Models, just display a simple list."""
+
+    list_display = ('name', 'enable', 'desc', 'host', 'port')
 
 
 @admin.register(OracleTarget)
 class OracleTargetAdmin(admin.ModelAdmin):
 
-    list_display = ('id', 'name', 'enable', 'desc')
+    list_display = ('name', 'enable', 'desc', 'host', 'port')
 
     fieldsets = (
         (
             'Basic', {
+                'description': '修改数据后，需要通过重启target才可以生效!',
                 'fields': ('name', 'enable', 'desc')
             }
         ), (
@@ -38,15 +68,16 @@ class OracleTargetAdmin(admin.ModelAdmin):
 
 
 @admin.register(Ora11gR2)
-class TableSQLAdmin(admin.ModelAdmin):  # todo : restart proxy, it will effect.
+class TableSQLAdmin(admin.ModelAdmin):
 
     """Admin for TableCollections Models,Notice that TableCollections is an abstract base class."""
 
-    list_display = ('id', 'name', 'enable', 'desc', 'period')
+    list_display = ('name', 'enable', 'desc', 'period')
 
     fieldsets = (
         (
             'Basic', {
+                'description': '修改数据后，需要通过重启target才可以生效!',
                 'fields': ('name', 'enable', 'desc', 'period')
             }
         ), (
