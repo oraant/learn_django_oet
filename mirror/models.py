@@ -161,7 +161,10 @@ class OracleTarget(models.Model):
 
     # validators
 
-    special_sign = RegexValidator(regex=r' ', inverse_match=True, message="Use '_' instead of ' ' / '-' / '.'")
+    special_sign = RegexValidator(
+        regex=r'^[a-zA-Z0-9_]+$',
+        message="Only allow a-z A-Z 0-9 and '_'"
+    )
 
     # choices
     table_sql_list = [(x.__name__, x.subclass_name()) for x in TableCollections.__subclasses__()]
