@@ -1,7 +1,8 @@
 from mirror.libs.proxy import Proxy
 from common.libs.socket_server import SocketServer
 from common.libs.job_manager import JobManager
-from logging.handlers import RotatingFileHandler as LogHandler
+# from logging.handlers import RotatingFileHandler as LogHandler
+from cloghandler import ConcurrentRotatingFileHandler as LogHandler
 import logging
 import os
 from django.conf import settings
@@ -41,13 +42,11 @@ class Server(SocketServer):
         self.proxy_managers = {}
         self.check_time = self.global_config.reborn.seconds
 
-        # overwrite father class's logger and daemon context
-        self.__set_logger()
-        self.__set_context()
-
     def __set_logger(self):  # todo : processes's number better less than 50
         """
         Overwrite father's logger: add handler, set log level and format.
+        Notes:
+            Must call this in daemon!!! Or the file descriptor will be closed by daemon context.
         """
 
         # get log configs
@@ -76,17 +75,11 @@ class Server(SocketServer):
         self.logger.setLevel(log_level)
 
         # write first log if have error.
+
+        self.logger.info("starting server at %s:%d" % (self.sock_host, self.sock_port))
+
         if error_msg:
             self.logger.error(error_msg)
-
-    def __set_context(self):
-        """custom parent's daemon context, make sure Pipe and Logger in child can work."""
-        self.logger.debug("custom parent's daemon context.")
-
-        # get file descriptors for logger
-        preserves = [handler.stream for handler in self.logger.handlers]
-
-        self.context.files_preserve = preserves  # make sure logger can be used in daemon process.
 
     # overwrite parent's method.
 
@@ -100,6 +93,8 @@ class Server(SocketServer):
         """
 
         connection.close()  # make sure models can be use after process run in daemon.
+
+        self.__set_logger()  # init logger
 
         target_names = [target.name for target in self.oracle_targets]
 
