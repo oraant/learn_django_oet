@@ -100,13 +100,36 @@ class TableCollections(models.Model):
         return self.name
 
 
-class Ora11gR2(TableCollections):
+class OraTest(TableCollections):
     """Tables of Oracle whose version is 11gR2."""
 
     class Meta:
-        verbose_name = "[Table Collections] Oracle 11G R2's table"
-        verbose_name_plural = "[Table Collections] Oracle 11G R2"
+        verbose_name = "[Table Collections] Oracle Test's table"
+        verbose_name_plural = "[Table Collections] Oracle Test"
 
+
+class Ora10g(TableCollections):
+    """Tables of Oracle whose version is 11gR2."""
+
+    class Meta:
+        verbose_name = "[Table Collections] Oracle 10G's table"
+        verbose_name_plural = "[Table Collections] Oracle 10G"
+
+
+class Ora11g(TableCollections):
+    """Tables of Oracle whose version is 11gR2."""
+
+    class Meta:
+        verbose_name = "[Table Collections] Oracle 11G's table"
+        verbose_name_plural = "[Table Collections] Oracle 11G"
+
+
+class Ora12c(TableCollections):
+    """Tables of Oracle whose version is 11gR2."""
+
+    class Meta:
+        verbose_name = "[Table Collections] Oracle 12C's table"
+        verbose_name_plural = "[Table Collections] Oracle 12C"
 
 # servers for redis and mysql, and target oracle databases.
 

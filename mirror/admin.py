@@ -67,7 +67,7 @@ class OracleTargetAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(Ora11gR2)
+@admin.register(OraTest, Ora10g, Ora11g, Ora12c)
 class TableSQLAdmin(admin.ModelAdmin):
 
     """Admin for TableCollections Models,Notice that TableCollections is an abstract base class."""
