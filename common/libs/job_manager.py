@@ -211,7 +211,7 @@ class JobManager:
 
         self.closed.clear()
 
-        while True:
+        while True:  # todo : should check at least two times if reborn failed.
 
             if self.closed.wait(self.check_time):  # if process closed, end the watch thread.
                 break
