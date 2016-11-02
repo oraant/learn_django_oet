@@ -16,6 +16,7 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 from pages import views
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
@@ -28,3 +29,5 @@ urlpatterns = [
     url(r'^test/$', views.test),
     url(r'^test2/$', views.test2),
 ]
+
+urlpatterns += staticfiles_urlpatterns()
