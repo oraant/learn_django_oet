@@ -1,3 +1,8 @@
+######### Others ################
+MySQL database - utf-8
+Redis
+
+
 ######### Common ################
 
 [Python Environment Manager]
@@ -7,15 +12,20 @@ pyenv
 [Python modules]
 
 Python==2.7.11+
+Pip
+#Cython==0.24.1
 Django==1.9.7
+gunicorn
+supervisor==3.3.1
+
 cx_Oracle==5.2.1
 MySQL-python==1.2.5
 redis
-mysql-connector==2.1.3
+influxdb
+
+celery==3.1.24
 pytz # pre for APScheduler
 APScheduler==3.2.0
-Cython==0.24.1
-ConcurrentLogHandler==0.9.1
 
 ######### Ubuntu ################
 
